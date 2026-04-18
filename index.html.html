@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Cleaning OS</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f2f2f7;
+  --card: #ffffff;
+  --border: rgba(0,0,0,0.08);
+  --text: #1c1c1e;
+  --muted: #8e8e93;
+  --accent: #007aff;
+  --accent-d: #0062cc;
+  --green: #34c759;
+  --green-d: #248a3d;
+  --orange: #ff9500;
+  --red: #ff3b30;
+  --purple: #af52de;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --sans: 'Noto Sans JP', -apple-system, sans-serif;
+  --mono: 'DM Mono', monospace;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { height: 100%; }
+body { background: var(--bg); font-family: var(--sans); color: var(--text); min-height: 100vh; font-size: 15px; -webkit-font-smoothing: antialiased; }
+
+/* ===== SCREENS ===== */
+.screen { display: none; min-height: 100vh; flex-direction: column; }
+.screen.show { display: flex; }
+
+/* ===== SETUP SCREEN ===== */
+.setup-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: calc(60px + var(--safe-top)) 20px 40px; }
+.app-icon { width: 72px; height: 72px; background: linear-gradient(145deg, #007aff, #5856d6); border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 4px 16px rgba(0,122,255,0.35); }
+.app-icon svg { width: 38px; height: 38px; }
+.setup-title { font-size: 24px; font-weight: 700; text-align: center; letter-spacing: -0.03em; margin-bottom: 6px; }
+.setup-sub { font-size: 14px; color: var(--muted); text-align: center; margin-bottom: 36px; }
+.setup-card { background: var(--card); border-radius: 16px; padding: 20px; width: 100%; max-width: 400px; box-shadow: var(--card-shadow); margin-bottom: 16px; }
+.setup-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+.setup-input { width: 100%; padding: 12px 14px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; font-family: var(--sans); font-size: 14px; color: var(--text); outline: none; transition: border-color .15s; }
+.setup-input:focus { border-color: var(--accent); }
+.setup-hint { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+.setup-hint a { color: var(--accent); }
+
+/* Staff grid */
+.staff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.staff-cell { padding: 12px 6px; background: var(--bg); border-radius: 10px; text-align: center; cursor: pointer; transition: all .15s; border: 2px solid transparent; font-size: 14px; font-weight: 500; }
+.staff-cell:active { transform: scale(0.96); }
+.staff-cell.sel { background: rgba(0,122,255,0.08); border-color: var(--accent); color: var(--accent); }
+.staff-avatar-sm { width: 32px; height: 32px; border-radius: 50%; background: var(--muted); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; margin: 0 auto 5px; }
+.staff-cell.sel .staff-avatar-sm { background: var(--accent); }
+
+.big-btn { width: 100%; padding: 15px; border-radius: 14px; font-size: 16px; font-weight: 700; font-family: var(--sans); border: none; cursor: pointer; transition: all .15s; letter-spacing: 0.01em; }
+.big-btn-blue { background: var(--accent); color: #fff; }
+.big-btn-blue:disabled { background: #c7c7cc; }
+.big-btn-blue:not(:disabled):active { background: var(--accent-d); transform: scale(0.98); }
+.big-btn-ghost { background: var(--card); color: var(--accent); border: 1.5px solid var(--border); margin-top: 10px; }
+
+/* ===== MAIN APP ===== */
+.topbar { background: var(--card); border-bottom: 0.5px solid var(--border); padding: calc(var(--safe-top) + 12px) 16px 12px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.topbar-left { }
+.topbar-name { font-size: 17px; font-weight: 700; }
+.topbar-date { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.topbar-right { display: flex; gap: 8px; align-items: center; }
+.icon-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--bg); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+.scroll-content { flex: 1; overflow-y: auto; padding: 16px 16px calc(90px + var(--safe-bottom)); }
+
+/* TAB BAR */
+.tabbar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 0.5px solid var(--border); display: flex; padding-bottom: var(--safe-bottom); z-index: 100; }
+.tab { flex: 1; padding: 10px 4px 6px; border: none; background: none; font-family: var(--sans); color: #8e8e93; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; transition: color .1s; }
+.tab.on { color: var(--accent); }
+.tab-icon { font-size: 23px; line-height: 1; }
+.tab-lbl { font-size: 10px; font-weight: 500; }
+
+/* CARDS */
+.card { background: var(--card); border-radius: 16px; box-shadow: var(--card-shadow); margin-bottom: 12px; overflow: hidden; }
+.card-inner { padding: 16px; }
+.card-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 14px; }
+
+/* STATUS CARD (top of home) */
+.status-card { background: var(--accent); border-radius: 20px; padding: 20px; color: #fff; margin-bottom: 14px; position: relative; overflow: hidden; }
+.status-card.working { background: linear-gradient(135deg, #34c759, #30b350); }
+.status-card.done { background: linear-gradient(135deg, #636366, #48484a); }
+.status-bg { position: absolute; right: -20px; top: -20px; width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.1); }
+.status-label { font-size: 13px; opacity: 0.85; margin-bottom: 6px; }
+.status-main { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 16px; }
+.status-row { display: flex; gap: 20px; }
+.status-stat { }
+.status-stat-num { font-size: 20px; font-weight: 700; font-family: var(--mono); }
+.status-stat-lbl { font-size: 11px; opacity: 0.8; }
+
+/* ACTION BUTTONS */
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.action-btn { padding: 16px 12px; border-radius: 14px; border: none; font-family: var(--sans); cursor: pointer; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; transition: all .15s; position: relative; overflow: hidden; }
+.action-btn:active { transform: scale(0.97); }
+.action-btn-icon { font-size: 26px; }
+.action-btn-label { font-size: 15px; font-weight: 700; }
+.action-btn-sub { font-size: 11px; opacity: 0.75; }
+.ab-shukkin { background: var(--accent); color: #fff; }
+.ab-taikkin { background: #636366; color: #fff; }
+.ab-kaisho  { background: var(--green); color: #fff; }
+.ab-kanryo  { background: #ff9500; color: #fff; }
+.ab-disabled { background: #e5e5ea; color: #c7c7cc; pointer-events: none; }
+
+/* SEISOJI LOG */
+.log-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+.log-item:last-child { border-bottom: none; }
+.log-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+.log-dot-green { background: var(--green); }
+.log-dot-orange { background: var(--orange); }
+.log-dot-blue { background: var(--accent); }
+.log-dot-gray { background: var(--muted); }
+.log-content { flex: 1; }
+.log-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.log-time { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+
+/* BADGE */
+.badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.b-green { background: rgba(52,199,89,0.12); color: var(--green-d); }
+.b-orange { background: rgba(255,149,0,0.12); color: #c67800; }
+.b-blue { background: rgba(0,122,255,0.10); color: var(--accent); }
+.b-red { background: rgba(255,59,48,0.10); color: var(--red); }
+.b-gray { background: rgba(142,142,147,0.12); color: var(--muted); }
+
+/* MODAL */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: flex-end; justify-content: center; }
+.modal-bg.open { display: flex; }
+.modal-sheet { background: var(--card); border-radius: 20px 20px 0 0; padding: 20px 20px calc(20px + var(--safe-bottom)); width: 100%; max-height: 92vh; overflow-y: auto; animation: slideUp .25s ease; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 36px; height: 4px; background: #d1d1d6; border-radius: 2px; margin: 0 auto 18px; }
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 18px; }
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 7px; display: block; }
+.form-control { width: 100%; padding: 12px 14px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 11px; font-family: var(--sans); font-size: 15px; color: var(--text); outline: none; }
+.form-control:focus { border-color: var(--accent); }
+select.form-control { -webkit-appearance: none; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.modal-btn { width: 100%; padding: 15px; border-radius: 13px; font-size: 16px; font-weight: 700; font-family: var(--sans); border: none; cursor: pointer; margin-top: 6px; transition: all .15s; }
+.modal-btn:active { transform: scale(0.98); }
+.modal-btn-primary { background: var(--accent); color: #fff; }
+.modal-btn-green { background: var(--green); color: #fff; }
+.modal-btn-orange { background: var(--orange); color: #fff; }
+.modal-btn-cancel { background: var(--bg); color: var(--muted); margin-top: 8px; }
+
+/* HISTORY */
+.hist-day { margin-bottom: 16px; }
+.hist-day-hd { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 8px; padding: 0 2px; }
+.hist-row { background: var(--card); border-radius: 12px; padding: 13px 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 12px; box-shadow: var(--card-shadow); }
+.hist-time { font-family: var(--mono); font-size: 15px; font-weight: 600; min-width: 52px; }
+.hist-info { flex: 1; }
+.hist-name { font-size: 14px; font-weight: 600; }
+.hist-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* PAY */
+.pay-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 0.5px solid var(--border); }
+.pay-row:last-child { border-bottom: none; }
+.pay-lbl { font-size: 15px; }
+.pay-sub { font-size: 12px; color: var(--muted); }
+.pay-amt { font-size: 16px; font-weight: 600; font-family: var(--mono); }
+.pay-total { background: var(--accent); border-radius: 14px; padding: 16px; display: flex; align-items: center; justify-content: space-between; color: #fff; margin-top: 12px; }
+.pay-total-lbl { font-size: 15px; font-weight: 600; }
+.pay-total-amt { font-size: 24px; font-weight: 700; font-family: var(--mono); }
+
+/* MONTH NAV */
+.month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.month-nav-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--card); border: none; font-size: 20px; cursor: pointer; box-shadow: var(--card-shadow); }
+.month-nav-lbl { font-size: 17px; font-weight: 700; }
+
+/* TOAST */
+.toast { position: fixed; bottom: calc(85px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(28,28,30,0.88); backdrop-filter: blur(10px); color: #fff; padding: 11px 22px; border-radius: 30px; font-size: 14px; font-weight: 500; z-index: 999; opacity: 0; transition: all .3s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* SETTINGS URL */
+.url-row { display: flex; gap: 8px; align-items: center; }
+.url-input { flex: 1; padding: 11px 13px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; font-size: 13px; font-family: var(--mono); color: var(--text); outline: none; }
+.url-input:focus { border-color: var(--accent); }
+.url-save-btn { padding: 11px 16px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-family: var(--sans); font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+
+/* CONNECTING overlay */
+.loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.85); backdrop-filter: blur(4px); z-index: 300; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+.loading-overlay.show { display: flex; }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 15px; color: var(--muted); }
+
+/* Tab pages */
+.tab-page { display: none; }
+.tab-page.on { display: block; }
+
+/* Empty */
+.empty { text-align: center; padding: 48px 20px; }
+.empty-emoji { font-size: 44px; margin-bottom: 14px; }
+.empty-text { font-size: 14px; color: var(--muted); line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- ===== SETUP SCREEN ===== -->
+<div class="screen show" id="s-setup">
+  <div class="setup-wrap">
+    <div class="app-icon">
+      <svg fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    </div>
+    <div class="setup-title">Cleaning OS</div>
+    <div class="setup-sub">スタッフ勤怠・清掃報告アプリ</div>
+
+    <!-- GAS URL設定 -->
+    <div class="setup-card">
+      <div class="setup-label">① Apps Script の URL</div>
+      <div class="url-row">
+        <input class="url-input" id="gas-url-setup" placeholder="https://script.google.com/macros/s/..." type="url">
+      </div>
+      <div class="setup-hint">
+        GoogleスプレッドシートにApps Scriptを貼り付けて「デプロイ」すると発行されるURLを入力してください。<br>
+        <a href="#" onclick="showSetupGuide()">設定手順を見る →</a>
+      </div>
+    </div>
+
+    <!-- スタッフ選択 -->
+    <div class="setup-card">
+      <div class="setup-label">② あなたの名前を選択</div>
+      <div class="staff-grid" id="setup-staff-grid">
+        <div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:16px 0">
+          URLを入力後、「スタッフ一覧を取得」を押してください
+        </div>
+      </div>
+      <button class="big-btn big-btn-ghost" style="margin-top:12px" onclick="fetchStaff()">🔄 スタッフ一覧を取得</button>
+    </div>
+
+    <button class="big-btn big-btn-blue" id="start-btn" disabled onclick="startApp()">はじめる →</button>
+
+    <div style="margin-top:20px;font-size:12px;color:var(--muted);text-align:center">
+      設定は端末に保存されます。次回から自動でログインします。
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div class="screen" id="s-app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-name" id="tb-name">—</div>
+      <div class="topbar-date" id="tb-date">—</div>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="syncData()" title="同期">🔄</button>
+      <button class="icon-btn" onclick="goSetup()" title="設定">⚙️</button>
+    </div>
+  </div>
+
+  <div class="scroll-content">
+
+    <!-- HOME TAB -->
+    <div class="tab-page on" id="tp-home">
+      <!-- Status card -->
+      <div id="status-card" class="status-card">
+        <div class="status-bg"></div>
+        <div class="status-label" id="sc-label">本日の状態</div>
+        <div class="status-main" id="sc-main">未出勤</div>
+        <div class="status-row">
+          <div class="status-stat"><div class="status-stat-num" id="sc-in">—:——</div><div class="status-stat-lbl">出勤時刻</div></div>
+          <div class="status-stat"><div class="status-stat-num" id="sc-clean">0件</div><div class="status-stat-lbl">清掃完了</div></div>
+          <div class="status-stat"><div class="status-stat-num" id="sc-out">—:——</div><div class="status-stat-lbl">退勤時刻</div></div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="action-grid" id="action-grid">
+        <!-- rendered by JS -->
+      </div>
+
+      <!-- Today's log -->
+      <div class="card">
+        <div class="card-inner">
+          <div class="card-title">本日の記録</div>
+          <div id="today-log">
+            <div class="empty" style="padding:20px 0">
+              <div class="empty-emoji" style="font-size:28px">📋</div>
+              <div class="empty-text" style="font-size:13px">まだ記録がありません</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY TAB -->
+    <div class="tab-page" id="tp-hist">
+      <div class="month-nav">
+        <button class="month-nav-btn" onclick="changeHistMonth(-1)">‹</button>
+        <div class="month-nav-lbl" id="hist-month-lbl"></div>
+        <button class="month-nav-btn" onclick="changeHistMonth(1)">›</button>
+      </div>
+      <div class="card"><div class="card-inner">
+        <div class="card-title">集計</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;margin-bottom:4px">
+          <div><div style="font-size:22px;font-weight:700;font-family:var(--mono)" id="h-days">—</div><div style="font-size:11px;color:var(--muted)">出勤日数</div></div>
+          <div><div style="font-size:22px;font-weight:700;font-family:var(--mono)" id="h-hours">—</div><div style="font-size:11px;color:var(--muted)">稼働時間</div></div>
+          <div><div style="font-size:22px;font-weight:700;font-family:var(--mono)" id="h-cleans">—</div><div style="font-size:11px;color:var(--muted)">清掃件数</div></div>
+        </div>
+      </div></div>
+      <div id="hist-list"></div>
+    </div>
+
+    <!-- PAY TAB -->
+    <div class="tab-page" id="tp-pay">
+      <div class="month-nav">
+        <button class="month-nav-btn" onclick="changePayMonth(-1)">‹</button>
+        <div class="month-nav-lbl" id="pay-month-lbl"></div>
+        <button class="month-nav-btn" onclick="changePayMonth(1)">›</button>
+      </div>
+      <div class="card"><div class="card-inner">
+        <div class="card-title">給与内訳（概算）</div>
+        <div id="pay-breakdown"></div>
+      </div></div>
+      <div id="pay-total-block"></div>
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px;padding:0 16px">確定額は管理者にご確認ください</div>
+    </div>
+
+  </div><!-- /scroll -->
+
+  <!-- TABBAR -->
+  <div class="tabbar">
+    <button class="tab on" onclick="switchTab('home',this)"><div class="tab-icon">🏠</div><div class="tab-lbl">ホーム</div></button>
+    <button class="tab" onclick="switchTab('hist',this)"><div class="tab-icon">📋</div><div class="tab-lbl">履歴</div></button>
+    <button class="tab" onclick="switchTab('pay',this)"><div class="tab-icon">💴</div><div class="tab-lbl">給与</div></button>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- 出勤モーダル -->
+<div class="modal-bg" id="m-shukkin">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🌅 出勤報告</div>
+    <div class="form-group">
+      <label class="form-label">出勤時刻</label>
+      <input class="form-control" id="shukkin-time" type="time">
+    </div>
+    <div class="form-group">
+      <label class="form-label">備考（任意）</label>
+      <input class="form-control" id="shukkin-memo" placeholder="例：少し遅れます">
+    </div>
+    <button class="modal-btn modal-btn-primary" onclick="submitShukkin()">出勤する</button>
+    <button class="modal-btn modal-btn-cancel" onclick="closeModal('m-shukkin')">キャンセル</button>
+  </div>
+</div>
+
+<!-- 清掃開始モーダル -->
+<div class="modal-bg" id="m-kaisho">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🏠 清掃開始</div>
+    <div class="form-group">
+      <label class="form-label">物件名</label>
+      <select class="form-control" id="kaisho-bukken">
+        <option value="">選択してください</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">開始時刻</label>
+      <input class="form-control" id="kaisho-time" type="time">
+    </div>
+    <div class="form-group">
+      <label class="form-label">備考（任意）</label>
+      <input class="form-control" id="kaisho-memo" placeholder="例：チェックアウト遅延あり">
+    </div>
+    <button class="modal-btn modal-btn-green" onclick="submitKaisho()">清掃開始を報告</button>
+    <button class="modal-btn modal-btn-cancel" onclick="closeModal('m-kaisho')">キャンセル</button>
+  </div>
+</div>
+
+<!-- 清掃完了モーダル -->
+<div class="modal-bg" id="m-kanryo">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✅ 清掃完了</div>
+    <div class="form-group">
+      <label class="form-label">物件名</label>
+      <select class="form-control" id="kanryo-bukken">
+        <option value="">選択してください</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">完了時刻</label>
+      <input class="form-control" id="kanryo-time" type="time">
+    </div>
+    <div class="form-group">
+      <label class="form-label">備考（任意）</label>
+      <input class="form-control" id="kanryo-memo" placeholder="例：備品補充済み">
+    </div>
+    <button class="modal-btn modal-btn-orange" onclick="submitKanryo()">清掃完了を報告</button>
+    <button class="modal-btn modal-btn-cancel" onclick="closeModal('m-kanryo')">キャンセル</button>
+  </div>
+</div>
+
+<!-- 退勤モーダル -->
+<div class="modal-bg" id="m-taikkin">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🌙 退勤報告</div>
+    <div class="form-group">
+      <label class="form-label">退勤時刻</label>
+      <input class="form-control" id="taikkin-time" type="time">
+    </div>
+    <div class="form-group">
+      <label class="form-label">交通費（円）</label>
+      <input class="form-control" id="taikkin-transport" type="number" placeholder="0" inputmode="numeric">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">パーキング代（円）</label>
+        <input class="form-control" id="taikkin-parking" type="number" placeholder="0" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">走行距離（km）</label>
+        <input class="form-control" id="taikkin-distance" type="number" placeholder="0" inputmode="decimal">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">備品購入代（円）</label>
+      <input class="form-control" id="taikkin-bihin" type="number" placeholder="0" inputmode="numeric">
+    </div>
+    <div class="form-group">
+      <label class="form-label">備考</label>
+      <input class="form-control" id="taikkin-memo" placeholder="例：お疲れさまでした">
+    </div>
+    <button class="modal-btn" style="background:#636366;color:#fff" onclick="submitTaikkin()">退勤する</button>
+    <button class="modal-btn modal-btn-cancel" onclick="closeModal('m-taikkin')">キャンセル</button>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">送信中...</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== STATE ==========
+let GAS_URL = '';
+let currentStaff = '';
+let staffList = [];
+let bukkenList = [];
+let todayLog = [];     // local records for today
+let historyData = [];  // fetched from GAS
+let histMonth = new Date();
+let payMonth  = new Date();
+let appState  = 'idle'; // idle | working | done
+
+const DAYS = ['日','月','火','水','木','金','土'];
+const MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+function today() { return fmt(new Date()); }
+function nowTime() { const n = new Date(); return pad(n.getHours())+':'+pad(n.getMinutes()); }
+function fmt(d) { return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function pad(n) { return String(n).padStart(2,'0'); }
+function monthStr(d) { return d.getFullYear()+'-'+pad(d.getMonth()+1); }
+function monthLbl(d) { return d.getFullYear()+'年'+MONTHS[d.getMonth()]; }
+
+// ========== PERSIST ==========
+function save() {
+  localStorage.setItem('cos_url', GAS_URL);
+  localStorage.setItem('cos_staff', currentStaff);
+  localStorage.setItem('cos_log_'+today(), JSON.stringify(todayLog));
+  localStorage.setItem('cos_bukken', JSON.stringify(bukkenList));
+  localStorage.setItem('cos_staff_list', JSON.stringify(staffList));
+}
+function load() {
+  GAS_URL = localStorage.getItem('cos_url') || '';
+  currentStaff = localStorage.getItem('cos_staff') || '';
+  todayLog = JSON.parse(localStorage.getItem('cos_log_'+today()) || '[]');
+  bukkenList = JSON.parse(localStorage.getItem('cos_bukken') || '[]');
+  staffList = JSON.parse(localStorage.getItem('cos_staff_list') || '[]');
+}
+
+// ========== TOAST ==========
+function toast(msg, dur=2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ========== LOADING ==========
+function showLoading(msg='送信中...') { document.getElementById('loading-text').textContent = msg; document.getElementById('loading').classList.add('show'); }
+function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+
+// ========== API ==========
+// GASはCORSを返さないためJSONPで取得
+function gasGet(params) {
+  return new Promise((resolve, reject) => {
+    if (!GAS_URL) { reject(new Error('URLが設定されていません')); return; }
+    const cbName = 'cb_' + Date.now();
+    const url = GAS_URL + '?' + new URLSearchParams({ ...params, callback: cbName });
+    const script = document.createElement('script');
+    const timer = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 10000);
+    window[cbName] = (data) => { cleanup(); resolve(data); };
+    function cleanup() { clearTimeout(timer); delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); }
+    script.onerror = () => { cleanup(); reject(new Error('script error')); };
+    script.src = url;
+    document.head.appendChild(script);
+  });
+}
+// POSTはno-corsで送信（レスポンスは読めないがデータは届く）
+async function gasPost(data) {
+  if (!GAS_URL) throw new Error('URLが設定されていません');
+  await fetch(GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: JSON.stringify(data)
+  });
+  return { ok: true };
+}
+
+// ========== SETUP ==========
+async function fetchStaff() {
+  const url = document.getElementById('gas-url-setup').value.trim();
+  if (!url) { toast('URLを入力してください'); return; }
+  GAS_URL = url;
+  showLoading('スタッフ一覧を取得中...');
+  try {
+    const d = await gasGet({ type: 'staff' });
+    if (d.ok) {
+      staffList = d.staff;
+      bukkenList = (await gasGet({ type: 'bukken' })).bukken || [];
+      save();
+      renderSetupStaff();
+      toast('✅ '+staffList.length+'名のスタッフを取得しました');
+    } else { toast('❌ 取得失敗: '+d.error, 3000); }
+  } catch(e) { toast('❌ 通信エラー。URLを確認してください', 3000); }
+  finally { hideLoading(); }
+}
+
+function renderSetupStaff() {
+  const grid = document.getElementById('setup-staff-grid');
+  if (!staffList.length) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:16px 0">スタッフが見つかりませんでした</div>'; return; }
+  grid.innerHTML = staffList.map(s => `<div class="staff-cell" onclick="selectSetupStaff('${s.name}',this)">
+    <div class="staff-avatar-sm">${s.name.slice(0,1)}</div>${s.name}</div>`).join('');
+}
+
+function selectSetupStaff(name, el) {
+  currentStaff = name;
+  document.querySelectorAll('.staff-cell').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('start-btn').disabled = false;
+}
+
+function startApp() {
+  if (!currentStaff || !GAS_URL) return;
+  save();
+  document.getElementById('s-setup').classList.remove('show');
+  document.getElementById('s-app').classList.add('show');
+  initApp();
+}
+
+function goSetup() {
+  document.getElementById('gas-url-setup').value = GAS_URL;
+  renderSetupStaff();
+  // re-mark selected
+  document.querySelectorAll('.staff-cell').forEach(c => { if (c.textContent.trim().includes(currentStaff)) c.classList.add('sel'); });
+  document.getElementById('s-app').classList.remove('show');
+  document.getElementById('s-setup').classList.add('show');
+}
+
+// ========== APP INIT ==========
+function initApp() {
+  const now = new Date();
+  document.getElementById('tb-name').textContent = currentStaff;
+  document.getElementById('tb-date').textContent = now.getFullYear()+'年'+MONTHS[now.getMonth()]+now.getDate()+'日（'+DAYS[now.getDay()]+'）';
+  histMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  payMonth  = new Date(now.getFullYear(), now.getMonth(), 1);
+  renderHome();
+  renderHistMonth();
+  renderPayMonth();
+  populateBukkenSelects();
+}
+
+function populateBukkenSelects() {
+  const opts = bukkenList.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+  ['kaisho-bukken','kanryo-bukken'].forEach(id => {
+    const el = document.getElementById(id);
+    el.innerHTML = '<option value="">選択してください</option>' + opts;
+  });
+}
+
+// ========== HOME ==========
+function getAppState() {
+  const shukkin = todayLog.find(l => l.kind === '出勤');
+  const taikkin = todayLog.find(l => l.kind === '退勤');
+  if (taikkin) return 'done';
+  if (shukkin) return 'working';
+  return 'idle';
+}
+
+function renderHome() {
+  const st = getAppState();
+  const shukkin = todayLog.find(l => l.kind === '出勤');
+  const taikkin = todayLog.find(l => l.kind === '退勤');
+  const cleans = todayLog.filter(l => l.kind === '清掃完了').length;
+
+  // Status card
+  const card = document.getElementById('status-card');
+  card.className = 'status-card' + (st==='working'?' working':st==='done'?' done':'');
+  document.getElementById('sc-label').textContent = st==='idle'?'本日の状態':st==='working'?'勤務中':'退勤済み';
+  document.getElementById('sc-main').textContent = st==='idle'?'未出勤':st==='working'?'清掃中 🧹':'お疲れさまでした！';
+  document.getElementById('sc-in').textContent = shukkin ? shukkin.time : '—:——';
+  document.getElementById('sc-clean').textContent = cleans+'件';
+  document.getElementById('sc-out').textContent = taikkin ? taikkin.time : '—:——';
+
+  // Action buttons
+  const grid = document.getElementById('action-grid');
+  const canWork = st === 'working';
+  const canStart = st === 'idle';
+  grid.innerHTML = `
+    <button class="action-btn ${canStart?'ab-shukkin':'ab-disabled'}" onclick="${canStart?'openModal(\'m-shukkin\')':''}">
+      <div class="action-btn-icon">🌅</div>
+      <div class="action-btn-label">出勤</div>
+      <div class="action-btn-sub">勤務開始を報告</div>
+    </button>
+    <button class="action-btn ${canWork?'ab-kaisho':'ab-disabled'}" onclick="${canWork?'openModal(\'m-kaisho\')':''}">
+      <div class="action-btn-icon">🔑</div>
+      <div class="action-btn-label">清掃開始</div>
+      <div class="action-btn-sub">物件に入室</div>
+    </button>
+    <button class="action-btn ${canWork?'ab-kanryo':'ab-disabled'}" onclick="${canWork?'openModal(\'m-kanryo\')':''}">
+      <div class="action-btn-icon">✅</div>
+      <div class="action-btn-label">清掃完了</div>
+      <div class="action-btn-sub">物件を退室</div>
+    </button>
+    <button class="action-btn ${canWork?'ab-taikkin':'ab-disabled'}" onclick="${canWork?'openModal(\'m-taikkin\')':''}">
+      <div class="action-btn-icon">🌙</div>
+      <div class="action-btn-label">退勤</div>
+      <div class="action-btn-sub">交通費も入力</div>
+    </button>`;
+
+  // Today log
+  const logEl = document.getElementById('today-log');
+  if (!todayLog.length) {
+    logEl.innerHTML = '<div class="empty" style="padding:20px 0"><div class="empty-emoji" style="font-size:28px">📋</div><div class="empty-text" style="font-size:13px">まだ記録がありません</div></div>';
+    return;
+  }
+  logEl.innerHTML = [...todayLog].reverse().map(l => {
+    const dot = l.kind==='出勤'?'log-dot-blue':l.kind==='退勤'?'log-dot-gray':l.kind==='清掃開始'?'log-dot-green':'log-dot-orange';
+    const badge = l.kind==='出勤'?'b-blue':l.kind==='退勤'?'b-gray':l.kind==='清掃開始'?'b-green':'b-orange';
+    return `<div class="log-item">
+      <div class="log-dot ${dot}"></div>
+      <div class="log-content">
+        <div class="log-title">${l.bukken||''} <span class="badge ${badge}">${l.kind}</span></div>
+        <div class="log-time">${l.time}${l.memo?' · '+l.memo:''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ========== SUBMIT FUNCTIONS ==========
+async function submitShukkin() {
+  const time = document.getElementById('shukkin-time').value || nowTime();
+  const memo = document.getElementById('shukkin-memo').value;
+  showLoading('出勤を記録中...');
+  try {
+    const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'出勤', time, memo });
+    if (res.ok) {
+      todayLog.push({ kind:'出勤', time, memo, date:today() });
+      save(); closeModal('m-shukkin'); renderHome();
+      toast('✅ 出勤を記録しました');
+    } else { toast('❌ エラー: '+res.error, 3000); }
+  } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
+}
+
+async function submitKaisho() {
+  const bukken = document.getElementById('kaisho-bukken').value;
+  const time   = document.getElementById('kaisho-time').value || nowTime();
+  const memo   = document.getElementById('kaisho-memo').value;
+  if (!bukken) { toast('物件を選択してください'); return; }
+  showLoading('清掃開始を記録中...');
+  try {
+    const res = await gasPost({ type:'seisoji', staff:currentStaff, date:today(), kind:'清掃開始', time, bukken, memo });
+    if (res.ok) {
+      todayLog.push({ kind:'清掃開始', time, bukken, memo, date:today() });
+      save(); closeModal('m-kaisho'); renderHome();
+      toast('✅ 清掃開始を記録しました');
+    } else { toast('❌ エラー: '+res.error, 3000); }
+  } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
+}
+
+async function submitKanryo() {
+  const bukken = document.getElementById('kanryo-bukken').value;
+  const time   = document.getElementById('kanryo-time').value || nowTime();
+  const memo   = document.getElementById('kanryo-memo').value;
+  if (!bukken) { toast('物件を選択してください'); return; }
+  showLoading('清掃完了を記録中...');
+  try {
+    const res = await gasPost({ type:'seisoji', staff:currentStaff, date:today(), kind:'清掃完了', time, bukken, memo });
+    if (res.ok) {
+      todayLog.push({ kind:'清掃完了', time, bukken, memo, date:today() });
+      save(); closeModal('m-kanryo'); renderHome();
+      toast('✅ 清掃完了を記録しました');
+    } else { toast('❌ エラー: '+res.error, 3000); }
+  } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
+}
+
+async function submitTaikkin() {
+  const time     = document.getElementById('taikkin-time').value || nowTime();
+  const transport= parseFloat(document.getElementById('taikkin-transport').value) || 0;
+  const parking  = parseFloat(document.getElementById('taikkin-parking').value) || 0;
+  const distance = parseFloat(document.getElementById('taikkin-distance').value) || 0;
+  const bihin    = parseFloat(document.getElementById('taikkin-bihin').value) || 0;
+  const memo     = document.getElementById('taikkin-memo').value;
+  showLoading('退勤を記録中...');
+  try {
+    const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'退勤', time, transport, parking, distance, bihin, memo });
+    if (res.ok) {
+      todayLog.push({ kind:'退勤', time, transport, parking, distance, bihin, memo, date:today() });
+      save(); closeModal('m-taikkin'); renderHome();
+      toast('✅ 退勤を記録しました。お疲れさまでした！', 3000);
+    } else { toast('❌ エラー: '+res.error, 3000); }
+  } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
+}
+
+// ========== HISTORY ==========
+function changeHistMonth(d) { histMonth = new Date(histMonth.getFullYear(), histMonth.getMonth()+d, 1); renderHistMonth(); }
+
+async function renderHistMonth() {
+  document.getElementById('hist-month-lbl').textContent = monthLbl(histMonth);
+  if (!GAS_URL) { renderHistLocal(); return; }
+  showLoading('履歴を取得中...');
+  try {
+    const res = await gasGet({ type:'mylog', staff:currentStaff, month:monthStr(histMonth) });
+    if (res.ok) { buildHistoryView(res.kintai, res.seisoji); }
+    else { renderHistLocal(); }
+  } catch(e) { renderHistLocal(); } finally { hideLoading(); }
+}
+
+function renderHistLocal() {
+  // fallback: show only todayLog if same month
+  buildHistoryView([], []);
+}
+
+function buildHistoryView(kintai, seisoji) {
+  // Group by date
+  const byDate = {};
+  kintai.forEach(r => { if (!byDate[r.date]) byDate[r.date]=[]; byDate[r.date].push(r); });
+  seisoji.forEach(r => { if (!byDate[r.date]) byDate[r.date]=[]; byDate[r.date].push(r); });
+
+  const dates = Object.keys(byDate).sort().reverse();
+  let totalDays = new Set(kintai.filter(r=>r.type==='出勤').map(r=>r.date)).size;
+  let totalCleans = seisoji.filter(r=>r.type==='清掃完了').length;
+
+  // Calc hours
+  let totalMins = 0;
+  const dayGroups = {};
+  kintai.forEach(r => { if (!dayGroups[r.date]) dayGroups[r.date]={}; dayGroups[r.date][r.type]=r.time; });
+  Object.values(dayGroups).forEach(d => {
+    if (d['出勤'] && d['退勤']) {
+      const [ih,im] = d['出勤'].split(':').map(Number);
+      const [oh,om] = d['退勤'].split(':').map(Number);
+      totalMins += (oh*60+om) - (ih*60+im);
+    }
+  });
+
+  document.getElementById('h-days').textContent = totalDays+'日';
+  document.getElementById('h-hours').textContent = (totalMins/60).toFixed(1)+'h';
+  document.getElementById('h-cleans').textContent = totalCleans+'件';
+
+  const listEl = document.getElementById('hist-list');
+  if (!dates.length) {
+    listEl.innerHTML = '<div class="empty"><div class="empty-emoji">📋</div><div class="empty-text">この月の記録がありません</div></div>';
+    return;
+  }
+
+  listEl.innerHTML = dates.map(date => {
+    const d = new Date(date);
+    const dow = d.getDay();
+    const items = byDate[date].sort((a,b)=>(a.time||a.ts||'').localeCompare(b.time||b.ts||''));
+    return `<div class="hist-day">
+      <div class="hist-day-hd">${d.getMonth()+1}月${d.getDate()}日（${DAYS[dow]}）</div>
+      ${items.map(r => {
+        const kind = r.type || r.kind;
+        const dot = kind==='出勤'?'b-blue':kind==='退勤'?'b-gray':kind==='清掃開始'?'b-green':'b-orange';
+        return `<div class="hist-row">
+          <div class="hist-time">${r.time||'—'}</div>
+          <div class="hist-info">
+            <div class="hist-name">${r.bukken||''} <span class="badge ${dot}">${kind}</span></div>
+            ${r.transport>0||r.parking>0?`<div class="hist-sub">交¥${r.transport||0} P¥${r.parking||0} ${r.distance?r.distance+'km':''}</div>`:''}
+            ${r.memo?`<div class="hist-sub">${r.memo}</div>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+// ========== PAY ==========
+function changePayMonth(d) { payMonth = new Date(payMonth.getFullYear(), payMonth.getMonth()+d, 1); renderPayMonth(); }
+
+async function renderPayMonth() {
+  document.getElementById('pay-month-lbl').textContent = monthLbl(payMonth);
+  if (!GAS_URL) { renderPayLocal(); return; }
+  showLoading('給与データを取得中...');
+  try {
+    const res = await gasGet({ type:'mylog', staff:currentStaff, month:monthStr(payMonth) });
+    if (res.ok) buildPayView(res.kintai, res.seisoji);
+    else renderPayLocal();
+  } catch(e) { renderPayLocal(); } finally { hideLoading(); }
+}
+
+function renderPayLocal() { buildPayView([], []); }
+
+function buildPayView(kintai, seisoji) {
+  const staffInfo = staffList.find(s => s.name === currentStaff) || { wage: 1100 };
+  const wage = parseFloat(staffInfo.wage) || 1100;
+
+  let totalMins = 0;
+  const dayGroups = {};
+  kintai.forEach(r => { if (!dayGroups[r.date]) dayGroups[r.date]={}; dayGroups[r.date][r.type]=r.time; });
+  Object.values(dayGroups).forEach(d => {
+    if (d['出勤'] && d['退勤']) {
+      const [ih,im] = d['出勤'].split(':').map(Number);
+      const [oh,om] = d['退勤'].split(':').map(Number);
+      totalMins += (oh*60+om) - (ih*60+im);
+    }
+  });
+
+  const hours = totalMins / 60;
+  const wageTotal = Math.round(hours * wage);
+  const transport = kintai.reduce((s,r) => s+(parseFloat(r.transport)||0), 0);
+  const parking   = kintai.reduce((s,r) => s+(parseFloat(r.parking)||0), 0);
+  const bihin     = kintai.reduce((s,r) => s+(parseFloat(r.bihin)||0), 0);
+  const distance  = kintai.reduce((s,r) => s+(parseFloat(r.distance)||0), 0);
+  const grand     = wageTotal + transport + parking + bihin;
+
+  document.getElementById('pay-breakdown').innerHTML = `
+    <div class="pay-row"><div><div class="pay-lbl">基本給</div><div class="pay-sub">${hours.toFixed(2)}h × ¥${wage.toLocaleString()}</div></div><div class="pay-amt">¥${wageTotal.toLocaleString()}</div></div>
+    <div class="pay-row"><div><div class="pay-lbl">交通費</div><div class="pay-sub">${kintai.filter(r=>r.transport>0).length}日分</div></div><div class="pay-amt">¥${transport.toLocaleString()}</div></div>
+    <div class="pay-row"><div><div class="pay-lbl">パーキング代</div></div><div class="pay-amt">¥${parking.toLocaleString()}</div></div>
+    ${distance>0?`<div class="pay-row"><div><div class="pay-lbl">走行距離</div></div><div class="pay-amt" style="color:var(--muted)">${distance.toFixed(1)}km</div></div>`:''}
+    ${bihin>0?`<div class="pay-row"><div><div class="pay-lbl">備品購入代</div></div><div class="pay-amt">¥${bihin.toLocaleString()}</div></div>`:''}`;
+
+  document.getElementById('pay-total-block').innerHTML = grand > 0
+    ? `<div class="pay-total"><div class="pay-total-lbl">支給合計（概算）</div><div class="pay-total-amt">¥${grand.toLocaleString()}</div></div>`
+    : `<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">この月のデータがありません</div>`;
+}
+
+// ========== MODAL ==========
+function openModal(id) {
+  // preset time
+  const timeEl = document.getElementById(id.replace('m-','') + '-time');
+  if (timeEl) timeEl.value = nowTime();
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(el => el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); }));
+
+// ========== TAB ==========
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('tp-'+name).classList.add('on');
+  el.classList.add('on');
+  if (name==='hist') renderHistMonth();
+  if (name==='pay')  renderPayMonth();
+}
+
+// ========== SYNC ==========
+async function syncData() {
+  showLoading('データを同期中...');
+  try {
+    const s = await gasGet({ type:'staff' });
+    if (s.ok) { staffList = s.staff; }
+    const b = await gasGet({ type:'bukken' });
+    if (b.ok) { bukkenList = b.bukken; populateBukkenSelects(); }
+    save();
+    toast('✅ 同期完了');
+  } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
+}
+
+// ========== SETUP GUIDE ==========
+function showSetupGuide() {
+  toast('手順: スプレッドシート → 拡張機能 → Apps Script → コード貼付 → デプロイ', 5000);
+}
+
+// ========== BOOT ==========
+load();
+if (GAS_URL && currentStaff) {
+  document.getElementById('s-setup').classList.remove('show');
+  document.getElementById('s-app').classList.add('show');
+  initApp();
+} else {
+  if (GAS_URL) document.getElementById('gas-url-setup').value = GAS_URL;
+  if (staffList.length) renderSetupStaff();
+}
+</script>
+</body>
+</html>
