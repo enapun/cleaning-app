@@ -351,16 +351,6 @@ select.form-control { -webkit-appearance: none; }
       <label class="form-label">出勤時刻</label>
       <input class="form-control" id="shukkin-time" type="time">
     </div>
-    <div class="form-group">
-      <label class="form-label">最初の物件名</label>
-      <select class="form-control" id="shukkin-bukken">
-        <option value="">選択してください</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">備考（任意）</label>
-      <input class="form-control" id="shukkin-memo" placeholder="例：少し遅れます">
-    </div>
     <button class="modal-btn modal-btn-primary" onclick="submitShukkin()">出勤する</button>
     <button class="modal-btn modal-btn-cancel" onclick="closeModal('m-shukkin')">キャンセル</button>
   </div>
@@ -426,16 +416,6 @@ select.form-control { -webkit-appearance: none; }
     <div class="form-group">
       <label class="form-label">退勤時刻</label>
       <input class="form-control" id="taikkin-time" type="time">
-    </div>
-    <div class="form-group">
-      <label class="form-label">最後の物件名</label>
-      <select class="form-control" id="taikkin-bukken">
-        <option value="">選択してください</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">補充報告（複数選択可）</label>
-      <div id="hoshu-checks" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px"></div>
     </div>
     <div class="form-group">
       <label class="form-label">休憩時間（分）</label>
@@ -733,13 +713,11 @@ function renderHome() {
 // ========== SUBMIT FUNCTIONS ==========
 async function submitShukkin() {
   const time = document.getElementById('shukkin-time').value || nowTime();
-  const bukken = document.getElementById('shukkin-bukken').value;
-  const memo = document.getElementById('shukkin-memo').value;
   showLoading('出勤を記録中...');
   try {
-    const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'出勤', time, bukken, memo });
+    const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'出勤', time });
     if (res.ok) {
-      todayLog.push({ kind:'出勤', time, bukken, memo, date:today() });
+      todayLog.push({ kind:'出勤', time, date:today() });
       save(); closeModal('m-shukkin'); renderHome();
       toast('✅ 出勤を記録しました');
     } else { toast('❌ エラー: '+res.error, 3000); }
@@ -781,20 +759,17 @@ async function submitKanryo() {
 
 async function submitTaikkin() {
   const time     = document.getElementById('taikkin-time').value || nowTime();
-  const bukken   = document.getElementById('taikkin-bukken').value;
   const kyukei   = parseInt(document.getElementById('taikkin-kyukei').value) || 0;
   const transport= parseFloat(document.getElementById('taikkin-transport').value) || 0;
   const parking  = parseFloat(document.getElementById('taikkin-parking').value) || 0;
   const distance = parseFloat(document.getElementById('taikkin-distance').value) || 0;
   const bihin    = parseFloat(document.getElementById('taikkin-bihin').value) || 0;
   const memo     = document.getElementById('taikkin-memo').value;
-  // 補充報告
-  const hoshu = getCheckedHoshu('hoshu-checks');
   showLoading('退勤を記録中...');
   try {
-    const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'退勤', time, bukken, kyukei, transport, parking, distance, bihin, hoshu, memo });
+    const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'退勤', time, kyukei, transport, parking, distance, bihin, memo });
     if (res.ok) {
-      todayLog.push({ kind:'退勤', time, bukken, kyukei, transport, parking, distance, bihin, hoshu, memo, date:today() });
+      todayLog.push({ kind:'退勤', time, kyukei, transport, parking, distance, bihin, memo, date:today() });
       save(); closeModal('m-taikkin'); renderHome();
       toast('✅ 退勤を記録しました。お疲れさまでした！', 3000);
     } else { toast('❌ エラー: '+res.error, 3000); }
