@@ -866,7 +866,8 @@ async function renderPayMonth() {
 function renderPayLocal() { buildPayView([], []); }
 
 function buildPayView(kintai, seisoji) {
-  const staffInfo = staffList.find(s => s.name === currentStaff) || { wage: 1100 };
+  const staffInfo = staffList.find(s => s.name === currentStaff) || { wage: 1100, transportType: '時給' };
+  const isFixed = String(staffInfo.transportType) === '固定給';
   const wage = parseFloat(staffInfo.wage) || 1100;
 
   let totalMins = 0;
@@ -881,7 +882,7 @@ function buildPayView(kintai, seisoji) {
   });
 
   const hours = totalMins / 60;
-  const wageTotal = Math.round(hours * wage);
+  const wageTotal = isFixed ? wage : Math.round(hours * wage);
   const transport = kintai.reduce((s,r) => s+(parseFloat(r.transport)||0), 0);
   const parking   = kintai.reduce((s,r) => s+(parseFloat(r.parking)||0), 0);
   const bihin     = kintai.reduce((s,r) => s+(parseFloat(r.bihin)||0), 0);
@@ -889,7 +890,11 @@ function buildPayView(kintai, seisoji) {
   const grand     = wageTotal + transport + parking + bihin;
 
   document.getElementById('pay-breakdown').innerHTML = `
-    <div class="pay-row"><div><div class="pay-lbl">基本給</div><div class="pay-sub">${hours.toFixed(2)}h × ¥${wage.toLocaleString()}</div></div><div class="pay-amt">¥${wageTotal.toLocaleString()}</div></div>
+    <div class="pay-row">
+      <div><div class="pay-lbl">${isFixed ? '固定給' : '基本給'}</div>
+      <div class="pay-sub">${isFixed ? '月額固定' : `${hours.toFixed(2)}h × ¥${wage.toLocaleString()}`}</div></div>
+      <div class="pay-amt">¥${wageTotal.toLocaleString()}</div>
+    </div>
     <div class="pay-row"><div><div class="pay-lbl">交通費</div><div class="pay-sub">${kintai.filter(r=>r.transport>0).length}日分</div></div><div class="pay-amt">¥${transport.toLocaleString()}</div></div>
     <div class="pay-row"><div><div class="pay-lbl">パーキング代</div></div><div class="pay-amt">¥${parking.toLocaleString()}</div></div>
     ${distance>0?`<div class="pay-row"><div><div class="pay-lbl">走行距離</div></div><div class="pay-amt" style="color:var(--muted)">${distance.toFixed(1)}km</div></div>`:''}
