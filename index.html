@@ -190,6 +190,29 @@ select.form-control { -webkit-appearance: none; }
 .hoshu-check { width:20px;height:20px;border-radius:50%;border:2px solid #ccc;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px; }
 .hoshu-item.checked .hoshu-check { background:var(--green);border-color:var(--green);color:#fff; }
 
+/* Calendar */
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.cal-head { text-align:center; font-size:11px; color:var(--muted); padding:4px 0; font-weight:600; }
+.cal-head.sun { color:var(--red); } .cal-head.sat { color:var(--accent); }
+.cal-cell { aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:13px; font-weight:500; position:relative; cursor:default; }
+.cal-cell.today { background:var(--accent); color:#fff; }
+.cal-cell.work { background:rgba(0,122,255,0.1); color:var(--accent); font-weight:700; }
+.cal-cell.work.sun { background:rgba(255,59,48,0.1); color:var(--red); }
+.cal-cell.out { background:rgba(255,59,48,0.1); color:var(--red); }
+.cal-cell.empty { visibility:hidden; }
+.cal-cell.other { color:#ccc; }
+.work-dot { position:absolute; bottom:1px; width:4px; height:4px; border-radius:50%; background:var(--accent); }
+
+/* Shift list */
+.shift-item { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:0.5px solid var(--border); }
+.shift-item:last-child { border-bottom:none; }
+.shift-date-col { text-align:center; min-width:44px; }
+.shift-date-num { font-size:20px; font-weight:700; line-height:1; }
+.shift-date-dow { font-size:10px; color:var(--muted); }
+.shift-date-col.sun .shift-date-num { color:var(--red); }
+.shift-date-col.sat .shift-date-num { color:var(--accent); }
+.shift-date-col.today-col .shift-date-num { color:var(--accent); }
+
 /* CONNECTING overlay */
 .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.85); backdrop-filter: blur(4px); z-index: 300; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
 .loading-overlay.show { display: flex; }
@@ -266,7 +289,21 @@ select.form-control { -webkit-appearance: none; }
 
     <!-- HOME TAB -->
     <div class="tab-page on" id="tp-home">
-      <!-- Status card -->
+      <!-- クイックリンク -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px" id="quick-links">
+      <button onclick="openLink('yotei')" style="padding:14px 10px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;font-family:var(--sans);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s" ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform=''">
+        <span style="font-size:26px">📅</span>
+        <span style="font-size:14px;font-weight:600;color:var(--text)">予定表</span>
+        <span style="font-size:11px;color:var(--muted)">シフト・スケジュール</span>
+      </button>
+      <button onclick="openLink('manual')" style="padding:14px 10px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;font-family:var(--sans);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s" ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform=''">
+        <span style="font-size:26px">📋</span>
+        <span style="font-size:14px;font-weight:600;color:var(--text)">物件マニュアル</span>
+        <span style="font-size:11px;color:var(--muted)">清掃手順・注意事項</span>
+      </button>
+    </div>
+
+    <!-- Status card -->
       <div id="status-card" class="status-card">
         <div class="status-bg"></div>
         <div class="status-label" id="sc-label">本日の状態</div>
@@ -295,6 +332,26 @@ select.form-control { -webkit-appearance: none; }
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- SHIFT TAB -->
+    <div class="tab-page" id="tp-shift">
+      <div class="month-nav">
+        <button class="month-nav-btn" onclick="changeShiftMonth(-1)">‹</button>
+        <div class="month-nav-lbl" id="shift-month-lbl"></div>
+        <button class="month-nav-btn" onclick="changeShiftMonth(1)">›</button>
+      </div>
+
+      <!-- カレンダー -->
+      <div class="card"><div class="card-inner">
+        <div id="shift-calendar"></div>
+      </div></div>
+
+      <!-- 出勤リスト -->
+      <div class="card"><div class="card-inner">
+        <div class="card-title" style="margin-bottom:12px">📋 今月の出勤予定</div>
+        <div id="shift-list-view"></div>
+      </div></div>
     </div>
 
     <!-- HISTORY TAB -->
@@ -335,6 +392,7 @@ select.form-control { -webkit-appearance: none; }
   <!-- TABBAR -->
   <div class="tabbar">
     <button class="tab on" onclick="switchTab('home',this)"><div class="tab-icon">🏠</div><div class="tab-lbl">ホーム</div></button>
+    <button class="tab" onclick="switchTab('shift',this)"><div class="tab-icon">📅</div><div class="tab-lbl">予定表</div></button>
     <button class="tab" onclick="switchTab('hist',this)"><div class="tab-icon">📋</div><div class="tab-lbl">履歴</div></button>
     <button class="tab" onclick="switchTab('pay',this)"><div class="tab-icon">💴</div><div class="tab-lbl">給与</div></button>
   </div>
@@ -445,6 +503,23 @@ select.form-control { -webkit-appearance: none; }
     </div>
     <button class="modal-btn" style="background:#636366;color:#fff" onclick="submitTaikkin()">退勤する</button>
     <button class="modal-btn modal-btn-cancel" onclick="closeModal('m-taikkin')">キャンセル</button>
+  </div>
+</div>
+
+<!-- リンク設定モーダル -->
+<div class="modal-bg" id="m-link">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="m-link-title">🔗 リンクを設定</div>
+    <div class="form-group">
+      <label class="form-label" id="m-link-label">URL</label>
+      <input class="form-control" id="link-url-input" type="url" placeholder="https://...">
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-top:-8px;margin-bottom:12px">
+      GoogleカレンダーやGoogleドライブのURLをそのまま貼り付けてください
+    </div>
+    <button class="modal-btn modal-btn-primary" onclick="saveLink()">保存して開く</button>
+    <button class="modal-btn modal-btn-cancel" onclick="closeModal('m-link')">キャンセル</button>
   </div>
 </div>
 
@@ -589,6 +664,7 @@ function initApp() {
   const now = new Date();
   document.getElementById('tb-name').textContent = currentStaff;
   document.getElementById('tb-date').textContent = now.getFullYear()+'年'+MONTHS[now.getMonth()]+now.getDate()+'日（'+DAYS[now.getDay()]+'）';
+  shiftMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   histMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   payMonth  = new Date(now.getFullYear(), now.getMonth(), 1);
   renderHome();
@@ -776,6 +852,101 @@ async function submitTaikkin() {
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
 
+// ========== SHIFT CALENDAR ==========
+let shiftMonth = new Date();
+let shiftData  = [];
+
+function changeShiftMonth(delta) {
+  shiftMonth = new Date(shiftMonth.getFullYear(), shiftMonth.getMonth() + delta, 1);
+  renderShiftCalendar();
+}
+
+async function renderShiftCalendar() {
+  document.getElementById('shift-month-lbl').textContent = monthLbl(shiftMonth);
+  const ms = monthStr(shiftMonth);
+
+  // GASからシフト取得
+  if (GAS_URL) {
+    try {
+      const res = await gasGet({ type:'shift', staff:currentStaff, month:ms });
+      if (res.ok) shiftData = res.shifts || [];
+    } catch(e) { shiftData = []; }
+  }
+
+  renderCalendar(shiftData, ms);
+  renderShiftList(shiftData, ms);
+}
+
+function renderCalendar(shifts, ms) {
+  const year  = shiftMonth.getFullYear();
+  const month = shiftMonth.getMonth();
+  const today = fmt(new Date());
+  const workDates = new Set(shifts.map(s => s.date));
+
+  // カレンダーHTML生成
+  const DAYS_HEAD = ['日','月','火','水','木','金','土'];
+  let html = '<div class="cal-grid" style="margin-bottom:8px">';
+  DAYS_HEAD.forEach((d,i) => {
+    html += `<div class="cal-head ${i===0?'sun':i===6?'sat':''}">${d}</div>`;
+  });
+  html += '</div><div class="cal-grid">';
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const lastDate = new Date(year, month+1, 0).getDate();
+
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-cell empty"></div>';
+
+  for (let d = 1; d <= lastDate; d++) {
+    const dateStr = `${year}-${pad(month+1)}-${pad(d)}`;
+    const dow = new Date(year, month, d).getDay();
+    const isToday = dateStr === today;
+    const isWork  = workDates.has(dateStr);
+    const cls = isToday ? 'today' : isWork ? (dow===0?'work sun':'work') : dow===0?'sun':dow===6?'sat':'';
+    html += `<div class="cal-cell ${cls}">${d}${isWork&&!isToday?'<div class="work-dot"></div>':''}</div>`;
+  }
+  html += '</div>';
+  document.getElementById('shift-calendar').innerHTML = html;
+}
+
+function renderShiftList(shifts, ms) {
+  const today = fmt(new Date());
+  const el = document.getElementById('shift-list-view');
+  if (!shifts.length) {
+    el.innerHTML = `<div class="empty" style="padding:24px 0"><div class="empty-emoji" style="font-size:32px">📅</div><div class="empty-text">この月のシフトデータがありません<br><span style="font-size:12px">管理者がスプレッドシートの<br>「シフト」シートに入力すると表示されます</span></div></div>`;
+    return;
+  }
+  const future = shifts.filter(s => s.date >= today);
+  const past   = shifts.filter(s => s.date < today);
+  const list   = [...future, ...past].sort((a,b) => a.date.localeCompare(b.date));
+
+  el.innerHTML = list.map(s => {
+    const d   = new Date(s.date);
+    const dow = d.getDay();
+    const dowCls = dow===0?'sun':dow===6?'sat':'';
+    const isToday = s.date === today;
+    const isPast  = s.date < today;
+    const badge = isPast
+      ? `<span class="badge b-gray">出勤済み</span>`
+      : isToday
+        ? `<span class="badge b-blue">本日</span>`
+        : `<span class="badge b-green">出勤予定</span>`;
+    return `<div class="shift-item" style="${isPast?'opacity:0.5':''}">
+      <div class="shift-date-col ${dowCls}${isToday?' today-col':''}">
+        <div class="shift-date-num">${d.getDate()}</div>
+        <div class="shift-date-dow">${DAYS[dow]}</div>
+      </div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${badge}
+          ${s.status&&s.status!=='出勤'?`<span style="font-size:12px;color:var(--muted)">${s.status}</span>`:''}
+        </div>
+        ${s.bukken?`<div style="font-size:13px;font-weight:600;color:var(--text);margin-top:4px">🏠 ${s.bukken}</div>`:''}
+        ${s.memo?`<div style="font-size:12px;color:var(--muted);margin-top:2px">${s.memo}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ========== HISTORY ==========
 function changeHistMonth(d) { histMonth = new Date(histMonth.getFullYear(), histMonth.getMonth()+d, 1); renderHistMonth(); }
 
@@ -905,6 +1076,35 @@ function buildPayView(kintai, seisoji) {
     : `<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">この月のデータがありません</div>`;
 }
 
+// ========== QUICK LINKS ==========
+let currentLinkType = '';
+
+function openLink(type) {
+  const key = 'cos_link_' + type;
+  const saved = localStorage.getItem(key);
+  if (saved) {
+    window.open(saved, '_blank');
+  } else {
+    currentLinkType = type;
+    const titles  = { yotei:'📅 予定表のURLを設定', manual:'📋 物件マニュアルのURLを設定' };
+    const labels  = { yotei:'予定表のURL（GoogleカレンダーなどのURL）', manual:'マニュアルのURL（GoogleドライブなどのURL）' };
+    document.getElementById('m-link-title').textContent = titles[type];
+    document.getElementById('m-link-label').textContent = labels[type];
+    document.getElementById('link-url-input').value = '';
+    document.getElementById('m-link').classList.add('open');
+  }
+}
+
+function saveLink() {
+  const url = document.getElementById('link-url-input').value.trim();
+  if (!url) { toast('URLを入力してください'); return; }
+  if (!url.startsWith('http')) { toast('正しいURLを入力してください（https://...）'); return; }
+  localStorage.setItem('cos_link_' + currentLinkType, url);
+  closeModal('m-link');
+  window.open(url, '_blank');
+  toast('✅ URLを保存しました');
+}
+
 // ========== MODAL ==========
 function openModal(id) {
   // preset time
@@ -921,6 +1121,7 @@ function switchTab(name, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
   document.getElementById('tp-'+name).classList.add('on');
   el.classList.add('on');
+  if (name==='shift') renderShiftCalendar();
   if (name==='hist') renderHistMonth();
   if (name==='pay')  renderPayMonth();
 }
