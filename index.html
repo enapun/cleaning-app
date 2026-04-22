@@ -583,6 +583,9 @@ function monthStr(d) { return d.getFullYear()+'-'+pad(d.getMonth()+1); }
 function monthLbl(d) { return d.getFullYear()+'年'+MONTHS[d.getMonth()]; }
 
 // ========== PERSIST ==========
+// GAS URLを直接埋め込み（管理者が変更するだけで全員に反映）
+const FIXED_GAS_URL = 'https://script.google.com/macros/s/AKfycbyPkGRQ5YPUtbgN3qK3GGmSbvQ51VKQdfJ4HWmwYfx4tRV-t54Dsz71XFjMHCSkvwHxfw/exec';
+
 function save() {
   localStorage.setItem('cos_url', GAS_URL);
   localStorage.setItem('cos_staff', currentStaff);
@@ -591,7 +594,9 @@ function save() {
   localStorage.setItem('cos_staff_list', JSON.stringify(staffList));
 }
 function load() {
-  GAS_URL = localStorage.getItem('cos_url') || '';
+  // 固定URLを優先（管理者が変更するだけで全員に反映）
+  GAS_URL = FIXED_GAS_URL;
+  localStorage.setItem('cos_url', FIXED_GAS_URL);
   currentStaff = localStorage.getItem('cos_staff') || '';
   todayLog = JSON.parse(localStorage.getItem('cos_log_'+today()) || '[]');
   bukkenList = JSON.parse(localStorage.getItem('cos_bukken') || '[]');
