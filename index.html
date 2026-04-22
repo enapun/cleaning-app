@@ -241,27 +241,15 @@ select.form-control { -webkit-appearance: none; }
     <div class="setup-title">Cleaning OS</div>
     <div class="setup-sub">スタッフ勤怠・清掃報告アプリ</div>
 
-    <!-- GAS URL設定 -->
-    <div class="setup-card">
-      <div class="setup-label">① Apps Script の URL</div>
-      <div class="url-row">
-        <input class="url-input" id="gas-url-setup" placeholder="https://script.google.com/macros/s/..." type="url">
-      </div>
-      <div class="setup-hint">
-        GoogleスプレッドシートにApps Scriptを貼り付けて「デプロイ」すると発行されるURLを入力してください。<br>
-        <a href="#" onclick="showSetupGuide()">設定手順を見る →</a>
-      </div>
-    </div>
-
     <!-- スタッフ選択 -->
     <div class="setup-card">
       <div class="setup-label">② あなたの名前を選択</div>
       <div class="staff-grid" id="setup-staff-grid">
         <div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:16px 0">
-          URLを入力後、「スタッフ一覧を取得」を押してください
+          読み込み中...
         </div>
       </div>
-      <button class="big-btn big-btn-ghost" style="margin-top:12px" onclick="fetchStaff()">🔄 スタッフ一覧を取得</button>
+      <button class="big-btn big-btn-ghost" style="margin-top:12px" onclick="fetchStaff()">🔄 スタッフ一覧を再取得</button>
     </div>
 
     <button class="big-btn big-btn-blue" id="start-btn" disabled onclick="startApp()">はじめる →</button>
@@ -644,9 +632,6 @@ async function gasPost(data) {
 
 // ========== SETUP ==========
 async function fetchStaff() {
-  const url = document.getElementById('gas-url-setup').value.trim();
-  if (!url) { toast('URLを入力してください'); return; }
-  GAS_URL = url;
   showLoading('スタッフ一覧を取得中...');
   try {
     const d = await gasGet({ type: 'staff' });
@@ -655,9 +640,9 @@ async function fetchStaff() {
       bukkenList = (await gasGet({ type: 'bukken' })).bukken || [];
       save();
       renderSetupStaff();
-      toast('✅ '+staffList.length+'名のスタッフを取得しました');
-    } else { toast('❌ 取得失敗: '+d.error, 3000); }
-  } catch(e) { toast('❌ 通信エラー。URLを確認してください', 3000); }
+      toast('✅ ' + staffList.length + '名のスタッフを取得しました');
+    } else { toast('❌ 取得失敗: ' + d.error, 3000); }
+  } catch(e) { toast('❌ 通信エラー', 3000); }
   finally { hideLoading(); }
 }
 
@@ -684,7 +669,6 @@ function startApp() {
 }
 
 function goSetup() {
-  document.getElementById('gas-url-setup').value = GAS_URL;
   renderSetupStaff();
   // re-mark selected
   document.querySelectorAll('.staff-cell').forEach(c => { if (c.textContent.trim().includes(currentStaff)) c.classList.add('sel'); });
@@ -1297,13 +1281,13 @@ function showSetupGuide() {
 
 // ========== BOOT ==========
 load();
-if (GAS_URL && currentStaff) {
+if (currentStaff) {
   document.getElementById('s-setup').classList.remove('show');
   document.getElementById('s-app').classList.add('show');
   initApp();
 } else {
-  if (GAS_URL) document.getElementById('gas-url-setup').value = GAS_URL;
-  if (staffList.length) renderSetupStaff();
+  // 自動でスタッフ一覧を取得
+  fetchStaff();
 }
 </script>
 </body>
