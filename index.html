@@ -861,6 +861,7 @@ async function submitKanryo() {
       todayLog.push({ kind:'清掃完了', time, bukken, hoshu, memo, date:today() });
       save(); closeModal('m-kanryo'); renderHome();
       toast('✅ 清掃完了を記録しました');
+      await sendDiscord(`清掃完了\n名前：${currentStaff}\n物件名：${bukken}`);
     } else { toast('❌ エラー: '+res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -1295,17 +1296,12 @@ function showSetupGuide() {
 }
 
 // ========== BOOT ==========
-// 起動時に常に最新のGAS URLを設定
-GAS_URL = FIXED_GAS_URL;
-localStorage.setItem('cos_url', FIXED_GAS_URL);
-
 load();
 if (currentStaff) {
   document.getElementById('s-setup').classList.remove('show');
   document.getElementById('s-app').classList.add('show');
   initApp();
 } else {
-  // 自動でスタッフ一覧を取得
   fetchStaff();
 }
 </script>
