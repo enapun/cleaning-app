@@ -817,6 +817,20 @@ async function submitShukkin() {
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
 
+// Discord Webhook URL（ここを新しいURLに変更する）
+const DISCORD_WEBHOOK = 'DISCORD_WEBHOOK_URL_HERE';
+
+async function sendDiscord(message) {
+  if (!DISCORD_WEBHOOK || DISCORD_WEBHOOK === 'DISCORD_WEBHOOK_URL_HERE') return;
+  try {
+    await fetch(DISCORD_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: message })
+    });
+  } catch(e) {}
+}
+
 async function submitKaisho() {
   const bukken = document.getElementById('kaisho-bukken').value;
   const time   = document.getElementById('kaisho-time').value || nowTime();
@@ -829,6 +843,7 @@ async function submitKaisho() {
       todayLog.push({ kind:'清掃開始', time, bukken, memo, date:today() });
       save(); closeModal('m-kaisho'); renderHome();
       toast('✅ 清掃開始を記録しました');
+      await sendDiscord(`清掃開始\n名前：${currentStaff}\n物件名：${bukken}`);
     } else { toast('❌ エラー: '+res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
