@@ -843,7 +843,7 @@ async function submitKaisho() {
       todayLog.push({ kind:'清掃開始', time, bukken, memo, date:today() });
       save(); closeModal('m-kaisho'); renderHome();
       toast('✅ 清掃開始を記録しました');
-      await sendDiscord(`清掃開始\n名前：${currentStaff}\n物件名：${bukken}`);
+      await sendDiscord(`🏠 清掃開始\n━━━━━━━━━━━━\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🕐 時刻：${time}`);
     } else { toast('❌ エラー: '+res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -861,7 +861,7 @@ async function submitKanryo() {
       todayLog.push({ kind:'清掃完了', time, bukken, hoshu, memo, date:today() });
       save(); closeModal('m-kanryo'); renderHome();
       toast('✅ 清掃完了を記録しました');
-      await sendDiscord(`清掃完了\n名前：${currentStaff}\n物件名：${bukken}`);
+      await sendDiscord(`✅ 清掃完了\n━━━━━━━━━━━━\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🕐 時刻：${time}`);
     } else { toast('❌ エラー: '+res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
