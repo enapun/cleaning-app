@@ -446,9 +446,13 @@ select.form-control { -webkit-appearance: none; }
       <label class="form-label">完了時刻</label>
       <input class="form-control" id="kanryo-time" type="time">
     </div>
-    <div class="form-group">
+    <div class="form-group" id="kanryo-hoshu-block">
       <label class="form-label">補充依頼（必要なものを選択）</label>
       <div id="kanryo-hoshu-checks" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px"></div>
+    </div>
+    <div class="form-group" id="kanryo-hoshu-memo-block" style="display:none">
+      <label class="form-label">補充・備考（任意）</label>
+      <input class="form-control" id="kanryo-hoshu-memo" placeholder="例：トイレットペーパー不足">
     </div>
     <div class="form-group">
       <label class="form-label">備考（任意）</label>
@@ -894,7 +898,10 @@ async function submitKanryo() {
   const bukken = document.getElementById('kanryo-bukken').value;
   const time   = document.getElementById('kanryo-time').value || nowTime();
   const memo   = document.getElementById('kanryo-memo').value;
-  const hoshu  = getCheckedHoshu('kanryo-hoshu-checks');
+  const isCleanersHigh = ['ｸﾘｰﾅｰｽﾞﾊｲ','クリーナーズハイ','クリIナIズハイ'].includes(currentStaff);
+  const hoshu  = isCleanersHigh
+    ? (document.getElementById('kanryo-hoshu-memo').value || '')
+    : getCheckedHoshu('kanryo-hoshu-checks');
   if (!bukken) { toast('物件を選択してください'); return; }
   showLoading('清掃完了を記録中...');
   try {
@@ -1312,6 +1319,18 @@ function openModal(id) {
   if (id === 'm-shift-upload') {
     document.getElementById('shift-upload-result').style.display = 'none';
     document.getElementById('shift-upload-zone').style.display = 'block';
+  }
+  // ｸﾘｰﾅｰｽﾞﾊｲの場合、清掃完了モーダルの補充欄を切り替え
+  if (id === 'm-kanryo') {
+    const isCleanersHigh = ['ｸﾘｰﾅｰｽﾞﾊｲ','クリーナーズハイ','クリIナIズハイ'].includes(currentStaff);
+    const hoshuBlock = document.getElementById('kanryo-hoshu-block');
+    const hoshuMemoBlock = document.getElementById('kanryo-hoshu-memo-block');
+    if (hoshuBlock) hoshuBlock.style.display = isCleanersHigh ? 'none' : 'block';
+    if (hoshuMemoBlock) hoshuMemoBlock.style.display = isCleanersHigh ? 'block' : 'none';
+    // チェックをリセット
+    document.querySelectorAll('#kanryo-hoshu-checks .hoshu-item').forEach(i => i.classList.remove('checked'));
+    const memoEl = document.getElementById('kanryo-hoshu-memo');
+    if (memoEl) memoEl.value = '';
   }
   document.getElementById(id).classList.add('open');
 }
