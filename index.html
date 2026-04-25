@@ -688,6 +688,18 @@ function initApp() {
   renderHistMonth();
   renderPayMonth();
   populateBukkenSelects();
+  // 起動時に自動同期（最新データを取得）
+  autoSync();
+}
+
+async function autoSync() {
+  try {
+    const s = await gasGet({ type:'staff' });
+    if (s.ok) staffList = s.staff;
+    const b = await gasGet({ type:'bukken' });
+    if (b.ok) { bukkenList = b.bukken; populateBukkenSelects(); }
+    save();
+  } catch(e) {}
 }
 
 const HOSHU_ITEMS = [
