@@ -277,20 +277,6 @@ select.form-control { -webkit-appearance: none; }
 
     <!-- HOME TAB -->
     <div class="tab-page on" id="tp-home">
-      <!-- クイックリンク -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px" id="quick-links">
-      <button onclick="switchTab('shift', document.querySelector('.tab:nth-child(2)'))" style="padding:14px 10px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;font-family:var(--sans);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s" ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform=''">
-        <span style="font-size:26px">📅</span>
-        <span style="font-size:14px;font-weight:600;color:var(--text)">予定表</span>
-        <span style="font-size:11px;color:var(--muted)">シフト・スケジュール</span>
-      </button>
-      <button onclick="openLink('manual')" style="padding:14px 10px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;font-family:var(--sans);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s" ontouchstart="this.style.transform='scale(0.97)'" ontouchend="this.style.transform=''">
-        <span style="font-size:26px">📋</span>
-        <span style="font-size:14px;font-weight:600;color:var(--text)">物件マニュアル</span>
-        <span style="font-size:11px;color:var(--muted)">清掃手順・注意事項</span>
-      </button>
-    </div>
-
     <!-- Status card -->
       <div id="status-card" class="status-card">
         <div class="status-bg"></div>
