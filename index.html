@@ -703,8 +703,28 @@ const HOSHU_ITEMS = [
   'ブラシ','コロコロ本体','単三電池','単四電池','電球','その他'
 ];
 
+// ｸﾘｰﾅｰｽﾞﾊｲ専用物件リスト
+const CLEANERS_HIGH_BUKKEN = [
+  'Blues２F','Blues３F','Blues４F','Blues５F','Blues６F','Blues７F','Blues８F','Blues９F',
+  'OPT１岸里','OPT２伝法戸建て','OPT３田辺1･2階','OPT４田辺３階',
+  'OPT５田辺駅４階','OPT６田辺５階','OPT７伝法戸建て','OPT８粉浜戸建て'
+];
+
+function getFilteredBukken() {
+  const isCleanersHigh = ['ｸﾘｰﾅｰｽﾞﾊｲ','クリーナーズハイ','クリIナIズハイ'].includes(currentStaff);
+  if (isCleanersHigh) {
+    return bukkenList.filter(b => {
+      const name = b.name;
+      return name.includes('Blues') || name.includes('OPT') ||
+             name.includes('Ｂｌｕｅｓ') || name.includes('ＯＰＴ');
+    });
+  }
+  return bukkenList;
+}
+
 function populateBukkenSelects() {
-  const opts = bukkenList.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+  const filtered = getFilteredBukken();
+  const opts = filtered.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
   ['shukkin-bukken','kaisho-bukken','kanryo-bukken','taikkin-bukken'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '<option value="">選択してください</option>' + opts;
