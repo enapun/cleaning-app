@@ -808,27 +808,43 @@ function renderHome() {
   const grid = document.getElementById('action-grid');
   const canWork = st === 'working';
   const canStart = st === 'idle';
-  grid.innerHTML = `
-    <button class="action-btn ${canStart?'ab-shukkin':'ab-disabled'}" onclick="${canStart?'openModal(\'m-shukkin\')':''}">
-      <div class="action-btn-icon">🌅</div>
-      <div class="action-btn-label">出勤</div>
-      <div class="action-btn-sub">勤務開始を報告</div>
-    </button>
-    <button class="action-btn ${canWork?'ab-kaisho':'ab-disabled'}" onclick="${canWork?'openModal(\'m-kaisho\')':''}">
-      <div class="action-btn-icon">🔑</div>
-      <div class="action-btn-label">清掃開始</div>
-      <div class="action-btn-sub">物件に入室</div>
-    </button>
-    <button class="action-btn ${canWork?'ab-kanryo':'ab-disabled'}" onclick="${canWork?'openModal(\'m-kanryo\')':''}">
-      <div class="action-btn-icon">✅</div>
-      <div class="action-btn-label">清掃完了</div>
-      <div class="action-btn-sub">物件を退室</div>
-    </button>
-    <button class="action-btn ${canWork?'ab-taikkin':'ab-disabled'}" onclick="${canWork?'openModal(\'m-taikkin\')':''}">
-      <div class="action-btn-icon">🌙</div>
-      <div class="action-btn-label">退勤</div>
-      <div class="action-btn-sub">交通費も入力</div>
-    </button>`;
+  const isCleanersHigh = ['ｸﾘｰﾅｰｽﾞﾊｲ','クリーナーズハイ','クリIナIズハイ'].includes(currentStaff);
+
+  if (isCleanersHigh) {
+    grid.innerHTML = `
+      <button class="action-btn ab-kaisho" onclick="openModal('m-kaisho')">
+        <div class="action-btn-icon">🔑</div>
+        <div class="action-btn-label">清掃開始</div>
+        <div class="action-btn-sub">物件に入室</div>
+      </button>
+      <button class="action-btn ab-kanryo" onclick="openModal('m-kanryo')">
+        <div class="action-btn-icon">✅</div>
+        <div class="action-btn-label">清掃完了</div>
+        <div class="action-btn-sub">物件を退室</div>
+      </button>`;
+  } else {
+    grid.innerHTML = `
+      <button class="action-btn ${canStart?'ab-shukkin':'ab-disabled'}" onclick="${canStart?'openModal(\'m-shukkin\')':''}">
+        <div class="action-btn-icon">🌅</div>
+        <div class="action-btn-label">出勤</div>
+        <div class="action-btn-sub">勤務開始を報告</div>
+      </button>
+      <button class="action-btn ${canWork?'ab-taikkin':'ab-disabled'}" onclick="${canWork?'openModal(\'m-taikkin\')':''}">
+        <div class="action-btn-icon">🌙</div>
+        <div class="action-btn-label">退勤</div>
+        <div class="action-btn-sub">交通費も入力</div>
+      </button>
+      <button class="action-btn ${canWork?'ab-kaisho':'ab-disabled'}" onclick="${canWork?'openModal(\'m-kaisho\')':''}">
+        <div class="action-btn-icon">🔑</div>
+        <div class="action-btn-label">清掃開始</div>
+        <div class="action-btn-sub">物件に入室</div>
+      </button>
+      <button class="action-btn ${canWork?'ab-kanryo':'ab-disabled'}" onclick="${canWork?'openModal(\'m-kanryo\')':''}">
+        <div class="action-btn-icon">✅</div>
+        <div class="action-btn-label">清掃完了</div>
+        <div class="action-btn-sub">物件を退室</div>
+      </button>`;
+  }
 
   // Today log
   const logEl = document.getElementById('today-log');
