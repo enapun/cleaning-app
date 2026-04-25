@@ -691,7 +691,7 @@ function initApp() {
 }
 
 const HOSHU_ITEMS = [
-  'シャンプー','コンディショナー','ボディソープ','キレイキレイ','キュキュット',
+  '補充なし','シャンプー','コンディショナー','ボディソープ','キレイキレイ','キュキュット',
   'バスマジックリン','トイレマジックリン','マイペット','アタック',
   'ゴミ袋大','ゴミ袋小','ゴミ袋90ℓ（さくらの外用！）','台所用ネット',
   '箱ティッシュ','トイレットペーパー','トイレシート','コロコロ',
@@ -726,7 +726,17 @@ function renderHoshuChecks(containerId) {
 }
 
 function toggleHoshu(el) {
-  el.classList.toggle('checked');
+  const isNashi = el.querySelector('span').textContent === '補充なし';
+  const container = el.closest('[id$="-hoshu-checks"]') || el.parentElement;
+  if (isNashi) {
+    container.querySelectorAll('.hoshu-item').forEach(i => i.classList.remove('checked'));
+    el.classList.add('checked');
+  } else {
+    container.querySelectorAll('.hoshu-item').forEach(i => {
+      if (i.querySelector('span').textContent === '補充なし') i.classList.remove('checked');
+    });
+    el.classList.toggle('checked');
+  }
 }
 
 function getCheckedHoshu(containerId) {
