@@ -1129,15 +1129,20 @@ function renderCalendar(shifts, ms) {
 }
 
 function renderShiftList(shifts, ms) {
-  const today = fmt(new Date());
+  const now   = new Date();
+  const today = fmt(now);
+  const tomorrow = fmt(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+  const hour  = now.getHours();
   const el = document.getElementById('shift-list-view');
   if (!shifts.length) {
     el.innerHTML = `<div class="empty" style="padding:24px 0"><div class="empty-emoji" style="font-size:32px">📅</div><div class="empty-text">この月のシフトデータがありません<br><span style="font-size:12px">管理者がスプレッドシートの<br>「シフト」シートに入力すると表示されます</span></div></div>`;
     return;
   }
-  const future = shifts.filter(s => s.date >= today);
-  const past   = shifts.filter(s => s.date < today);
-  const list   = [...future, ...past].sort((a,b) => a.date.localeCompare(b.date));
+  // 22時以降は翌日のみ、それ以外は当日と翌日のみ表示
+  const list = shifts.filter(s => {
+    if (hour >= 22) return s.date === tomorrow;
+    return s.date === today || s.date === tomorrow;
+  }).sort((a,b) => a.date.localeCompare(b.date));
 
   el.innerHTML = list.map(s => {
     const d   = new Date(s.date);
