@@ -1279,6 +1279,25 @@ function buildHistoryView(kintai, seisoji) {
 }
 
 // ========== PAY ==========
+async function downloadPayslipPDF() {
+  if (!GAS_URL) { toast('GAS URLが設定されていません'); return; }
+  const month = monthStr(payMonth);
+  showLoading('PDFを準備中...');
+  try {
+    const res = await gasGet({ type:'payslip_pdf', staff:currentStaff, month });
+    if (res.ok && res.url) {
+      hideLoading();
+      window.open(res.url, '_blank');
+    } else {
+      hideLoading();
+      toast('❌ ' + (res.error || 'PDFの取得に失敗しました'), 4000);
+    }
+  } catch(e) {
+    hideLoading();
+    toast('❌ 通信エラー', 3000);
+  }
+}
+
 function changePayMonth(d) { payMonth = new Date(payMonth.getFullYear(), payMonth.getMonth()+d, 1); renderPayMonth(); }
 
 async function renderPayMonth() {
@@ -1330,7 +1349,8 @@ function buildPayView(kintai, seisoji) {
     ${bihin>0?`<div class="pay-row"><div><div class="pay-lbl">備品購入代</div></div><div class="pay-amt">¥${bihin.toLocaleString()}</div></div>`:''}`;
 
   document.getElementById('pay-total-block').innerHTML = grand > 0
-    ? `<div class="pay-total"><div class="pay-total-lbl">支給合計（概算）</div><div class="pay-total-amt">¥${grand.toLocaleString()}</div></div>`
+    ? `<div class="pay-total"><div class="pay-total-lbl">支給合計（概算）</div><div class="pay-total-amt">¥${grand.toLocaleString()}</div></div>
+    <button onclick="downloadPayslipPDF()" style="width:100%;margin-top:12px;padding:14px;background:#34c759;color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:700;font-family:var(--sans);cursor:pointer;">📄 給与明細PDFをダウンロード</button>`
     : `<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">この月のデータがありません</div>`;
 }
 
