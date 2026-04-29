@@ -843,6 +843,16 @@ function renderHome() {
         <div class="action-btn-icon">✅</div>
         <div class="action-btn-label">清掃完了</div>
         <div class="action-btn-sub">物件を退室</div>
+      </button>
+      <button class="action-btn ${canWork?'':'ab-disabled'}" style="background:#ff9500;color:#fff" onclick="${canWork?'submitKyukeiStart()':''}">
+        <div class="action-btn-icon">☕</div>
+        <div class="action-btn-label">休憩開始</div>
+        <div class="action-btn-sub">休憩に入る</div>
+      </button>
+      <button class="action-btn ${canWork?'':'ab-disabled'}" style="background:#5856d6;color:#fff" onclick="${canWork?'submitKyukeiEnd()':''}">
+        <div class="action-btn-icon">🔄</div>
+        <div class="action-btn-label">休憩終了</div>
+        <div class="action-btn-sub">業務に戻る</div>
       </button>`;
   }
 
@@ -907,6 +917,28 @@ async function submitKaisho() {
       toast('✅ 清掃開始を記録しました');
       await sendDiscord(`🏠 清掃開始\n━━━━━━━━━━━━\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🕐 時刻：${time}`);
     } else { toast('❌ エラー: '+res.error, 3000); }
+  } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
+}
+
+async function submitKyukeiStart() {
+  showLoading('休憩開始を記録中...');
+  try {
+    const res = await GasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'休憩開始', time:nowTime(), bukken:'', kyukei:0, transport:0, parking:0, distance:0, bihin:0, memo:'' });
+    if (res.ok) {
+      todayLog.push({ kind:'休憩開始', time:nowTime(), date:today() });
+      save(); renderHome(); toast('☕ 休憩開始を記録しました');
+    } else { toast('❌ エラー: ' + res.error, 3000); }
+  } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
+}
+
+async function submitKyukeiEnd() {
+  showLoading('休憩終了を記録中...');
+  try {
+    const res = await GasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'休憩終了', time:nowTime(), bukken:'', kyukei:0, transport:0, parking:0, distance:0, bihin:0, memo:'' });
+    if (res.ok) {
+      todayLog.push({ kind:'休憩終了', time:nowTime(), date:today() });
+      save(); renderHome(); toast('🔄 休憩終了を記録しました');
+    } else { toast('❌ エラー: ' + res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
 
