@@ -336,13 +336,34 @@ select.form-control { -webkit-appearance: none; }
       </button>
 
       <!-- カレンダー -->
-      <div class="card"><div class="card-inner">
+      <div class="card"><div class="card-inner" style="padding:12px">
         <div id="shift-calendar"></div>
       </div></div>
 
-      <!-- 出勤リスト -->
+      <!-- 選択日の詳細 -->
+      <div id="shift-day-detail" style="display:none" class="card"><div class="card-inner">
+        <div class="card-title" id="shift-day-title" style="margin-bottom:8px"></div>
+        <div id="shift-day-content"></div>
+      </div></div>
+
+      <!-- 月集計 -->
       <div class="card"><div class="card-inner">
-        <div class="card-title" style="margin-bottom:12px">📋 今月の出勤予定</div>
+        <div class="card-title" style="margin-bottom:10px">月の集計</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:11px;color:var(--muted)">清掃</div>
+            <div style="font-size:22px;font-weight:700;color:var(--accent)" id="shift-count-seiso">0</div>
+          </div>
+          <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+            <div style="font-size:11px;color:var(--muted)">配送</div>
+            <div style="font-size:22px;font-weight:700;color:var(--red)" id="shift-count-haibin">0</div>
+          </div>
+        </div>
+      </div></div>
+
+      <!-- 出勤リスト（当日・翌日） -->
+      <div class="card"><div class="card-inner">
+        <div class="card-title" style="margin-bottom:12px">📋 直近の予定</div>
         <div id="shift-list-view"></div>
       </div></div>
     </div>
@@ -1133,11 +1154,24 @@ function renderCalendar(shifts, ms) {
   const year  = shiftMonth.getFullYear();
   const month = shiftMonth.getMonth();
   const today = fmt(new Date());
-  const workDates = new Set(shifts.map(s => s.date));
 
-  // カレンダーHTML生成
+  // 日付→シフト一覧のマップ
+  const shiftByDate = {};
+  shifts.forEach(s => {
+    if (!shiftByDate[s.date]) shiftByDate[s.date] = [];
+    shiftByDate[s.date].push(s);
+  });
+
+  // 集計
+  const seisoCnt  = shifts.filter(s => s.role === '清掃').length;
+  const haibinCnt = shifts.filter(s => s.role === '配送').length;
+  const seisoCntEl  = document.getElementById('shift-count-seiso');
+  const haibinCntEl = document.getElementById('shift-count-haibin');
+  if (seisoCntEl)  seisoCntEl.textContent  = seisoCnt  + '件';
+  if (haibinCntEl) haibinCntEl.textContent = haibinCnt + '件';
+
   const DAYS_HEAD = ['日','月','火','水','木','金','土'];
-  let html = '<div class="cal-grid" style="margin-bottom:8px">';
+  let html = '<div class="cal-grid" style="margin-bottom:4px">';
   DAYS_HEAD.forEach((d,i) => {
     html += `<div class="cal-head ${i===0?'sun':i===6?'sat':''}">${d}</div>`;
   });
@@ -1152,12 +1186,76 @@ function renderCalendar(shifts, ms) {
     const dateStr = `${year}-${pad(month+1)}-${pad(d)}`;
     const dow = new Date(year, month, d).getDay();
     const isToday = dateStr === today;
-    const isWork  = workDates.has(dateStr);
-    const cls = isToday ? 'today' : isWork ? (dow===0?'work sun':'work') : dow===0?'sun':dow===6?'sat':'';
-    html += `<div class="cal-cell ${cls}">${d}${isWork&&!isToday?'<div class="work-dot"></div>':''}</div>`;
+    const dayShifts = shiftByDate[dateStr] || [];
+    const hasSeiso  = dayShifts.some(s => s.role === '清掃');
+    const hasHaibin = dayShifts.some(s => s.role === '配送');
+
+    const numCls = isToday ? 'style="background:#9c27b0;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:11px"'
+      : dow===0 ? 'style="color:#e53935;font-size:12px"'
+      : dow===6 ? 'style="color:#1565c0;font-size:12px"'
+      : 'style="font-size:12px"';
+
+    let badges = '';
+    if (hasSeiso)  badges += '<div style="background:#1a73e8;border-radius:2px;font-size:8px;color:#fff;padding:1px 2px;margin-top:1px;line-height:1.3">清掃</div>';
+    if (hasHaibin) badges += '<div style="background:#d93025;border-radius:2px;font-size:8px;color:#fff;padding:1px 2px;margin-top:1px;line-height:1.3">配送</div>';
+
+    // 物件名（1件目のみ短縮）
+    let bukkenLabel = '';
+    if (dayShifts.length > 0) {
+      const name = dayShifts[0].bukken || '';
+      bukkenLabel = `<div style="font-size:7px;color:var(--muted);margin-top:1px;line-height:1.2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:38px">${name.slice(0,6)}</div>`;
+      if (dayShifts.length > 1) bukkenLabel += `<div style="font-size:7px;color:var(--muted)">+${dayShifts.length-1}</div>`;
+    }
+
+    html += `<div class="cal-cell" onclick="showDayDetail('${dateStr}')" style="cursor:${dayShifts.length>0?'pointer':'default'};padding:3px 2px;min-height:52px;vertical-align:top">
+      <div ${numCls}>${d}</div>
+      ${badges}${bukkenLabel}
+    </div>`;
   }
   html += '</div>';
+
+  // 凡例
+  html += `<div style="display:flex;gap:10px;margin-top:8px;font-size:10px;color:var(--muted);justify-content:center">
+    <span><span style="display:inline-block;background:#1a73e8;border-radius:2px;width:8px;height:8px;margin-right:2px;vertical-align:middle"></span>清掃</span>
+    <span><span style="display:inline-block;background:#d93025;border-radius:2px;width:8px;height:8px;margin-right:2px;vertical-align:middle"></span>配送</span>
+    <span><span style="display:inline-block;background:#9c27b0;border-radius:50%;width:8px;height:8px;margin-right:2px;vertical-align:middle"></span>今日</span>
+  </div>`;
+
   document.getElementById('shift-calendar').innerHTML = html;
+}
+
+function showDayDetail(dateStr) {
+  const shifts = shiftData.filter(s => s.date === dateStr);
+  if (!shifts.length) return;
+
+  const d = new Date(dateStr);
+  const DAYS = ['日','月','火','水','木','金','土'];
+  const label = (d.getMonth()+1) + '月' + d.getDate() + '日（' + DAYS[d.getDay()] + '）';
+
+  const titleEl   = document.getElementById('shift-day-title');
+  const contentEl = document.getElementById('shift-day-content');
+  const detailEl  = document.getElementById('shift-day-detail');
+
+  if (titleEl) titleEl.textContent = label + 'の詳細';
+
+  let html = '';
+  shifts.forEach(s => {
+    const roleColor = s.role === '配送' ? '#d93025' : '#1a73e8';
+    const outLabel  = s.memo ? `<span style="font-size:10px;color:var(--muted);margin-left:6px">${s.memo}</span>` : '';
+    const tokki     = s.tokki ? `<div style="font-size:11px;color:var(--orange);margin-top:2px">📝 ${s.tokki}</div>` : '';
+    const linen     = s.linen ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${s.linen}</div>` : '';
+    html += `<div style="background:var(--bg);border-radius:10px;padding:10px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span style="background:${roleColor};border-radius:4px;font-size:10px;color:#fff;padding:1px 7px">${s.role}</span>
+        <span style="font-size:13px;font-weight:600">${s.bukken}</span>${outLabel}
+      </div>
+      ${tokki}${linen}
+    </div>`;
+  });
+
+  if (contentEl) contentEl.innerHTML = html;
+  if (detailEl)  detailEl.style.display = 'block';
+  detailEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function renderShiftList(shifts, ms) {
