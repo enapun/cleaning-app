@@ -191,10 +191,10 @@ select.form-control { -webkit-appearance: none; }
 .hoshu-item.checked .hoshu-check { background:var(--green);border-color:var(--green);color:#fff; }
 
 /* Calendar */
-.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; }
 .cal-head { text-align:center; font-size:11px; color:var(--muted); padding:4px 0; font-weight:600; }
 .cal-head.sun { color:var(--red); } .cal-head.sat { color:var(--accent); }
-.cal-cell { aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:13px; font-weight:500; position:relative; cursor:default; }
+.cal-cell { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; border-radius:6px; font-size:13px; font-weight:500; position:relative; cursor:default; min-width:0; overflow:hidden; }
 .cal-cell.today { background:var(--accent); color:#fff; }
 .cal-cell.work { background:rgba(0,122,255,0.1); color:var(--accent); font-weight:700; }
 .cal-cell.work.sun { background:rgba(255,59,48,0.1); color:var(--red); }
@@ -336,7 +336,7 @@ select.form-control { -webkit-appearance: none; }
       </button>
 
       <!-- カレンダー -->
-      <div class="card"><div class="card-inner" style="padding:12px">
+      <div class="card" style="overflow:visible"><div class="card-inner" style="padding:12px 8px">
         <div id="shift-calendar"></div>
       </div></div>
 
@@ -1203,11 +1203,11 @@ function renderCalendar(shifts, ms) {
     let bukkenLabel = '';
     if (dayShifts.length > 0) {
       const name = dayShifts[0].bukken || '';
-      bukkenLabel = `<div style="font-size:7px;color:var(--muted);margin-top:1px;line-height:1.2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:38px">${name.slice(0,6)}</div>`;
+      bukkenLabel = `<div style="font-size:7px;color:var(--muted);margin-top:1px;line-height:1.2;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:100%">${name.slice(0,5)}</div>`;
       if (dayShifts.length > 1) bukkenLabel += `<div style="font-size:7px;color:var(--muted)">+${dayShifts.length-1}</div>`;
     }
 
-    html += `<div class="cal-cell" onclick="showDayDetail('${dateStr}')" style="cursor:${dayShifts.length>0?'pointer':'default'};padding:3px 2px;min-height:52px;vertical-align:top">
+    html += `<div class="cal-cell" onclick="showDayDetail('${dateStr}')" style="cursor:${dayShifts.length>0?'pointer':'default'};padding:2px 1px;min-height:52px;vertical-align:top;width:100%;box-sizing:border-box">
       <div ${numCls}>${d}</div>
       ${badges}${bukkenLabel}
     </div>`;
