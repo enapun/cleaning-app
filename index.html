@@ -972,6 +972,7 @@ async function submitKanryo() {
     ? (document.getElementById('kanryo-hoshu-memo').value || '')
     : getCheckedHoshu('kanryo-hoshu-checks');
   if (!bukken) { toast('物件を選択してください'); return; }
+  if (!isCleanersHigh && !hoshu) { toast('補充項目を選択してください（「補充なし」でも可）'); return; }
   showLoading('清掃完了を記録中...');
   try {
     const res = await gasPost({ type:'seisoji', staff:currentStaff, date:today(), kind:'清掃完了', time, bukken, hoshu, memo });
