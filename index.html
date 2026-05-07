@@ -944,7 +944,7 @@ async function submitKaisho() {
 async function submitKyukeiStart() {
   showLoading('休憩開始を記録中...');
   try {
-    const res = await GasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'休憩開始', time:nowTime(), bukken:'', kyukei:0, transport:0, parking:0, distance:0, bihin:0, memo:'' });
+    const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'休憩開始', time:nowTime(), bukken:'', kyukei:0, transport:0, parking:0, distance:0, bihin:0, memo:'' });
     if (res.ok) {
       todayLog.push({ kind:'休憩開始', time:nowTime(), date:today() });
       save(); renderHome(); toast('☕ 休憩開始を記録しました');
@@ -955,7 +955,7 @@ async function submitKyukeiStart() {
 async function submitKyukeiEnd() {
   showLoading('休憩終了を記録中...');
   try {
-    const res = await GasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'休憩終了', time:nowTime(), bukken:'', kyukei:0, transport:0, parking:0, distance:0, bihin:0, memo:'' });
+    const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'休憩終了', time:nowTime(), bukken:'', kyukei:0, transport:0, parking:0, distance:0, bihin:0, memo:'' });
     if (res.ok) {
       todayLog.push({ kind:'休憩終了', time:nowTime(), date:today() });
       save(); renderHome(); toast('🔄 休憩終了を記録しました');
