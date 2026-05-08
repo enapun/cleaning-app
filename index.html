@@ -906,7 +906,6 @@ async function submitShukkin() {
       todayLog.push({ kind:'出勤', time, date:today() });
       save(); closeModal('m-shukkin'); renderHome();
       toast('✅ 出勤を記録しました');
-      await sendDiscord(`━━━━━━━━━━━━\n🟦 出勤\n👤 名前：${currentStaff}\n🕐 時刻：${time}\n━━━━━━━━━━━━`);
     } else { toast('❌ エラー: '+res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -932,12 +931,12 @@ async function submitKaisho() {
   if (!bukken) { toast('物件を選択してください'); return; }
   showLoading('清掃開始を記録中...');
   try {
-    const res = await gasPost({ type:'seisoji', staff:currentStaff, date:today(), kind:'清掃開始', time, bukken, memo });
+    const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'清掃開始', time, bukken, memo });
     if (res.ok) {
       todayLog.push({ kind:'清掃開始', time, bukken, memo, date:today() });
       save(); closeModal('m-kaisho'); renderHome();
       toast('✅ 清掃開始を記録しました');
-      await sendDiscord(`━━━━━━━━━━━━\n🏠 清掃開始\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🕐 時刻：${time}\n━━━━━━━━━━━━`);
+      await sendDiscord(`🏠 清掃開始\n━━━━━━━━━━━━\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🕐 時刻：${time}`);
     } else { toast('❌ エラー: '+res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -949,7 +948,6 @@ async function submitKyukeiStart() {
     if (res.ok) {
       todayLog.push({ kind:'休憩開始', time:nowTime(), date:today() });
       save(); renderHome(); toast('☕ 休憩開始を記録しました');
-      await sendDiscord(`━━━━━━━━━━━━\n☕ 休憩開始\n👤 名前：${currentStaff}\n🕐 時刻：${nowTime()}\n━━━━━━━━━━━━`);
     } else { toast('❌ エラー: ' + res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -961,7 +959,6 @@ async function submitKyukeiEnd() {
     if (res.ok) {
       todayLog.push({ kind:'休憩終了', time:nowTime(), date:today() });
       save(); renderHome(); toast('🔄 休憩終了を記録しました');
-      await sendDiscord(`━━━━━━━━━━━━\n🔄 休憩終了\n👤 名前：${currentStaff}\n🕐 時刻：${nowTime()}\n━━━━━━━━━━━━`);
     } else { toast('❌ エラー: ' + res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -978,12 +975,12 @@ async function submitKanryo() {
   if (!isCleanersHigh && !hoshu) { toast('補充項目を選択してください（「補充なし」でも可）'); return; }
   showLoading('清掃完了を記録中...');
   try {
-    const res = await gasPost({ type:'seisoji', staff:currentStaff, date:today(), kind:'清掃完了', time, bukken, hoshu, memo });
+    const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'清掃完了', time, bukken, hoshu, memo });
     if (res.ok) {
       todayLog.push({ kind:'清掃完了', time, bukken, hoshu, memo, date:today() });
       save(); closeModal('m-kanryo'); renderHome();
       toast('✅ 清掃完了を記録しました');
-      await sendDiscord(`━━━━━━━━━━━━\n✅ 清掃完了\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🕐 時刻：${time}\n━━━━━━━━━━━━`);
+      await sendDiscord(`✅ 清掃完了\n━━━━━━━━━━━━\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🕐 時刻：${time}`);
     } else { toast('❌ エラー: '+res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -1003,7 +1000,6 @@ async function submitTaikkin() {
       todayLog.push({ kind:'退勤', time, kyukei, transport, parking, distance, bihin, memo, date:today() });
       save(); closeModal('m-taikkin'); renderHome();
       toast('✅ 退勤を記録しました。お疲れさまでした！', 3000);
-      await sendDiscord(`━━━━━━━━━━━━\n🟥 退勤\n👤 名前：${currentStaff}\n🕐 時刻：${time}\n━━━━━━━━━━━━`);
     } else { toast('❌ エラー: '+res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -1317,17 +1313,17 @@ async function renderHistMonth() {
   showLoading('履歴を取得中...');
   try {
     const res = await gasGet({ type:'mylog', staff:currentStaff, month:monthStr(histMonth) });
-    if (res.ok) { buildHistoryView(res.kintai, res.seisoji); }
+    if (res.ok) { buildHistoryView(res.kintai); }
     else { renderHistLocal(); }
   } catch(e) { renderHistLocal(); } finally { hideLoading(); }
 }
 
 function renderHistLocal() {
   // fallback: show only todayLog if same month
-  buildHistoryView([], []);
+  buildHistoryView([]);
 }
 
-function buildHistoryView(kintai, seisoji) {
+function buildHistoryView(kintai) {
   // 時刻を HH:MM 形式に正規化
   function formatTime(t) {
     if (!t) return '—';
@@ -1341,18 +1337,15 @@ function buildHistoryView(kintai, seisoji) {
     }
     return s.slice(0,5);
   }
-  // typeとkindを統一、時刻を正規化
-  kintai  = kintai.map(r => ({ ...r, kind: r.type || r.kind, time: formatTime(r.time) }));
-  seisoji = seisoji.map(r => ({ ...r, kind: r.type || r.kind, time: formatTime(r.time) }));
+  kintai = kintai.map(r => ({ ...r, kind: r.kind || r.type, time: formatTime(r.time) }));
 
   // Group by date
   const byDate = {};
   kintai.forEach(r => { if (!byDate[r.date]) byDate[r.date]=[]; byDate[r.date].push(r); });
-  seisoji.forEach(r => { if (!byDate[r.date]) byDate[r.date]=[]; byDate[r.date].push(r); });
 
   const dates = Object.keys(byDate).sort().reverse();
   let totalDays = new Set(kintai.filter(r=>r.kind==='出勤').map(r=>r.date)).size;
-  let totalCleans = seisoji.filter(r=>r.kind==='清掃完了').length;
+  let totalCleans = kintai.filter(r=>r.kind==='清掃完了').length;
 
   // Calc hours
   let totalMins = 0;
@@ -1379,17 +1372,18 @@ function buildHistoryView(kintai, seisoji) {
   listEl.innerHTML = dates.map(date => {
     const d = new Date(date);
     const dow = d.getDay();
-    const items = byDate[date].sort((a,b)=>(a.time||a.ts||'').localeCompare(b.time||b.ts||''));
+    const items = byDate[date].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
     return `<div class="hist-day">
       <div class="hist-day-hd">${d.getMonth()+1}月${d.getDate()}日（${DAYS[dow]}）</div>
       ${items.map(r => {
-        const kind = r.type || r.kind;
-        const dot = kind==='出勤'?'b-blue':kind==='退勤'?'b-gray':kind==='清掃開始'?'b-green':'b-orange';
+        const kind = r.kind;
+        const dot = kind==='出勤'?'b-blue':kind==='退勤'?'b-gray':kind==='清掃開始'?'b-green':kind==='清掃完了'?'b-orange':kind==='休憩開始'?'b-yellow':'b-gray';
         return `<div class="hist-row">
           <div class="hist-time">${r.time||'—'}</div>
           <div class="hist-info">
             <div class="hist-name">${r.bukken||''} <span class="badge ${dot}">${kind}</span></div>
             ${r.transport>0||r.parking>0?`<div class="hist-sub">交¥${r.transport||0} P¥${r.parking||0} ${r.distance?r.distance+'km':''}</div>`:''}
+            ${r.hosoku?`<div class="hist-sub">📦 ${r.hosoku}</div>`:''}
             ${r.memo?`<div class="hist-sub">${r.memo}</div>`:''}
           </div>
         </div>`;
@@ -1426,21 +1420,21 @@ async function renderPayMonth() {
   showLoading('給与データを取得中...');
   try {
     const res = await gasGet({ type:'mylog', staff:currentStaff, month:monthStr(payMonth) });
-    if (res.ok) buildPayView(res.kintai, res.seisoji);
+    if (res.ok) buildPayView(res.kintai);
     else renderPayLocal();
   } catch(e) { renderPayLocal(); } finally { hideLoading(); }
 }
 
-function renderPayLocal() { buildPayView([], []); }
+function renderPayLocal() { buildPayView([]); }
 
-function buildPayView(kintai, seisoji) {
+function buildPayView(kintai) {
   const staffInfo = staffList.find(s => s.name === currentStaff) || { wage: 1100, transportType: '時給' };
   const isFixed = String(staffInfo.transportType) === '固定給';
   const wage = parseFloat(staffInfo.wage) || 1100;
 
   let totalMins = 0;
   const dayGroups = {};
-  kintai.forEach(r => { if (!dayGroups[r.date]) dayGroups[r.date]={}; dayGroups[r.date][r.type]=r.time; });
+  kintai.forEach(r => { if (!dayGroups[r.date]) dayGroups[r.date]={}; dayGroups[r.date][r.kind||r.type]=r.time; });
   Object.values(dayGroups).forEach(d => {
     if (d['出勤'] && d['退勤']) {
       const [ih,im] = d['出勤'].split(':').map(Number);
