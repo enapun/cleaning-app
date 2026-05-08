@@ -906,6 +906,7 @@ async function submitShukkin() {
       todayLog.push({ kind:'出勤', time, date:today() });
       save(); closeModal('m-shukkin'); renderHome();
       toast('✅ 出勤を記録しました');
+      await sendDiscord(`━━━━━━━━━━━━\n🟦 出勤\n👤 名前：${currentStaff}\n🕐 時刻：${time}\n━━━━━━━━━━━━`);
     } else { toast('❌ エラー: '+res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -936,7 +937,7 @@ async function submitKaisho() {
       todayLog.push({ kind:'清掃開始', time, bukken, memo, date:today() });
       save(); closeModal('m-kaisho'); renderHome();
       toast('✅ 清掃開始を記録しました');
-      await sendDiscord(`🏠 清掃開始\n━━━━━━━━━━━━\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🕐 時刻：${time}`);
+      await sendDiscord(`━━━━━━━━━━━━\n🏠 清掃開始\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🕐 時刻：${time}\n━━━━━━━━━━━━`);
     } else { toast('❌ エラー: '+res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -948,6 +949,7 @@ async function submitKyukeiStart() {
     if (res.ok) {
       todayLog.push({ kind:'休憩開始', time:nowTime(), date:today() });
       save(); renderHome(); toast('☕ 休憩開始を記録しました');
+      await sendDiscord(`━━━━━━━━━━━━\n☕ 休憩開始\n👤 名前：${currentStaff}\n🕐 時刻：${nowTime()}\n━━━━━━━━━━━━`);
     } else { toast('❌ エラー: ' + res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -959,6 +961,7 @@ async function submitKyukeiEnd() {
     if (res.ok) {
       todayLog.push({ kind:'休憩終了', time:nowTime(), date:today() });
       save(); renderHome(); toast('🔄 休憩終了を記録しました');
+      await sendDiscord(`━━━━━━━━━━━━\n🔄 休憩終了\n👤 名前：${currentStaff}\n🕐 時刻：${nowTime()}\n━━━━━━━━━━━━`);
     } else { toast('❌ エラー: ' + res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -980,7 +983,7 @@ async function submitKanryo() {
       todayLog.push({ kind:'清掃完了', time, bukken, hoshu, memo, date:today() });
       save(); closeModal('m-kanryo'); renderHome();
       toast('✅ 清掃完了を記録しました');
-      await sendDiscord(`✅ 清掃完了\n━━━━━━━━━━━━\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🕐 時刻：${time}`);
+      await sendDiscord(`━━━━━━━━━━━━\n✅ 清掃完了\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🕐 時刻：${time}\n━━━━━━━━━━━━`);
     } else { toast('❌ エラー: '+res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -1000,6 +1003,7 @@ async function submitTaikkin() {
       todayLog.push({ kind:'退勤', time, kyukei, transport, parking, distance, bihin, memo, date:today() });
       save(); closeModal('m-taikkin'); renderHome();
       toast('✅ 退勤を記録しました。お疲れさまでした！', 3000);
+      await sendDiscord(`━━━━━━━━━━━━\n🟥 退勤\n👤 名前：${currentStaff}\n🕐 時刻：${time}\n━━━━━━━━━━━━`);
     } else { toast('❌ エラー: '+res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -1338,7 +1342,6 @@ function buildHistoryView(kintai) {
     return s.slice(0,5);
   }
   kintai = kintai.map(r => ({ ...r, kind: r.kind || r.type, time: formatTime(r.time) }));
-
   // Group by date
   const byDate = {};
   kintai.forEach(r => { if (!byDate[r.date]) byDate[r.date]=[]; byDate[r.date].push(r); });
@@ -1377,7 +1380,7 @@ function buildHistoryView(kintai) {
       <div class="hist-day-hd">${d.getMonth()+1}月${d.getDate()}日（${DAYS[dow]}）</div>
       ${items.map(r => {
         const kind = r.kind;
-        const dot = kind==='出勤'?'b-blue':kind==='退勤'?'b-gray':kind==='清掃開始'?'b-green':kind==='清掃完了'?'b-orange':kind==='休憩開始'?'b-yellow':'b-gray';
+        const dot = kind==='出勤'?'b-blue':kind==='退勤'?'b-gray':kind==='清掃開始'?'b-green':kind==='清掃完了'?'b-orange':'b-gray';
         return `<div class="hist-row">
           <div class="hist-time">${r.time||'—'}</div>
           <div class="hist-info">
