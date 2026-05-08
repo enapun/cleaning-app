@@ -1324,19 +1324,36 @@ function renderHistLocal() {
 }
 
 function buildHistoryView(kintai, seisoji) {
+  // 時刻を HH:MM 形式に正規化
+  function formatTime(t) {
+    if (!t) return '—';
+    const s = String(t);
+    if (/^\d{1,2}:\d{2}$/.test(s)) return s.padStart(5,'0').slice(0,5);
+    const m = s.match(/T(\d{2}):(\d{2})/);
+    if (m) {
+      let h = parseInt(m[1]) + 9;
+      if (h >= 24) h -= 24;
+      return String(h).padStart(2,'0') + ':' + m[2];
+    }
+    return s.slice(0,5);
+  }
+  // typeとkindを統一、時刻を正規化
+  kintai  = kintai.map(r => ({ ...r, kind: r.type || r.kind, time: formatTime(r.time) }));
+  seisoji = seisoji.map(r => ({ ...r, kind: r.type || r.kind, time: formatTime(r.time) }));
+
   // Group by date
   const byDate = {};
   kintai.forEach(r => { if (!byDate[r.date]) byDate[r.date]=[]; byDate[r.date].push(r); });
   seisoji.forEach(r => { if (!byDate[r.date]) byDate[r.date]=[]; byDate[r.date].push(r); });
 
   const dates = Object.keys(byDate).sort().reverse();
-  let totalDays = new Set(kintai.filter(r=>r.type==='出勤').map(r=>r.date)).size;
-  let totalCleans = seisoji.filter(r=>r.type==='清掃完了').length;
+  let totalDays = new Set(kintai.filter(r=>r.kind==='出勤').map(r=>r.date)).size;
+  let totalCleans = seisoji.filter(r=>r.kind==='清掃完了').length;
 
   // Calc hours
   let totalMins = 0;
   const dayGroups = {};
-  kintai.forEach(r => { if (!dayGroups[r.date]) dayGroups[r.date]={}; dayGroups[r.date][r.type]=r.time; });
+  kintai.forEach(r => { if (!dayGroups[r.date]) dayGroups[r.date]={}; dayGroups[r.date][r.kind]=r.time; });
   Object.values(dayGroups).forEach(d => {
     if (d['出勤'] && d['退勤']) {
       const [ih,im] = d['出勤'].split(':').map(Number);
