@@ -1431,13 +1431,28 @@ async function renderPayMonth() {
 function renderPayLocal() { buildPayView([]); }
 
 function buildPayView(kintai) {
+  // 時刻を HH:MM 形式に正規化
+  function formatTime(t) {
+    if (!t) return '—';
+    const s = String(t);
+    if (/^\d{1,2}:\d{2}$/.test(s)) return s.padStart(5,'0').slice(0,5);
+    const m = s.match(/T(\d{2}):(\d{2})/);
+    if (m) {
+      let h = parseInt(m[1]) + 9;
+      if (h >= 24) h -= 24;
+      return String(h).padStart(2,'0') + ':' + m[2];
+    }
+    return s.slice(0,5);
+  }
+  kintai = kintai.map(r => ({ ...r, kind: r.kind || r.type, time: formatTime(r.time) }));
+
   const staffInfo = staffList.find(s => s.name === currentStaff) || { wage: 1100, transportType: '時給' };
   const isFixed = String(staffInfo.transportType) === '固定給';
   const wage = parseFloat(staffInfo.wage) || 1100;
 
   let totalMins = 0;
   const dayGroups = {};
-  kintai.forEach(r => { if (!dayGroups[r.date]) dayGroups[r.date]={}; dayGroups[r.date][r.kind||r.type]=r.time; });
+  kintai.forEach(r => { if (!dayGroups[r.date]) dayGroups[r.date]={}; dayGroups[r.date][r.kind]=r.time; });
   Object.values(dayGroups).forEach(d => {
     if (d['出勤'] && d['退勤']) {
       const [ih,im] = d['出勤'].split(':').map(Number);
