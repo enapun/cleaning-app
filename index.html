@@ -647,14 +647,12 @@ function gasGet(params) {
 // POSTはno-corsで送信（レスポンスは読めないがデータは届く）
 async function gasPost(data) {
   if (!GAS_URL) throw new Error('URLが設定されていません');
-  const res = await fetch(GAS_URL, {
+  await fetch(GAS_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
+    mode: 'no-cors',
     body: JSON.stringify(data)
   });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const json = await res.json().catch(() => ({ ok: true }));
-  return json;
+  return { ok: true };
 }
 
 // ========== SETUP ==========
