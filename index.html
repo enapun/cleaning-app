@@ -983,7 +983,7 @@ async function submitKanryo() {
       todayLog.push({ kind:'清掃完了', time, bukken, hoshu, memo, date:today() });
       save(); closeModal('m-kanryo'); renderHome();
       toast('✅ 清掃完了を記録しました');
-      await sendDiscord(`━━━━━━━━━━━━\n✅ 清掃完了\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🕐 時刻：${time}\n━━━━━━━━━━━━`);
+      await sendDiscord(`━━━━━━━━━━━━\n✅ 清掃完了\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n📦 補充：${hoshu||'補充なし'}\n🕐 時刻：${time}\n━━━━━━━━━━━━`);
     } else { toast('❌ エラー: '+res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
