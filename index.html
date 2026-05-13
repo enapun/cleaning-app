@@ -254,9 +254,50 @@ select.form-control { -webkit-appearance: none; }
 
     <button class="big-btn big-btn-blue" id="start-btn" disabled onclick="startApp()">はじめる →</button>
 
+    <button class="big-btn big-btn-ghost" style="margin-top:8px" onclick="showAdminLogin()">🔐 管理者ログイン</button>
+
     <div style="margin-top:20px;font-size:12px;color:var(--muted);text-align:center">
       設定は端末に保存されます。次回から自動でログインします。
     </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN SCREEN ===== -->
+<div class="screen" id="s-admin">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-name">🔐 管理者</div>
+      <div class="topbar-date" id="admin-month-label">—</div>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="goSetup()">⚙️</button>
+    </div>
+  </div>
+  <div class="scroll-content">
+    <!-- 月切り替え -->
+    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:14px;padding:12px 16px;margin-bottom:14px;box-shadow:var(--card-shadow)">
+      <button class="icon-btn" onclick="changeAdminMonth(-1)">‹</button>
+      <div style="font-size:16px;font-weight:700" id="admin-month-title">—</div>
+      <button class="icon-btn" onclick="changeAdminMonth(1)">›</button>
+    </div>
+    <!-- スタッフ一覧 -->
+    <div id="admin-staff-list"></div>
+  </div>
+</div>
+
+<!-- ===== ADMIN DETAIL SCREEN ===== -->
+<div class="screen" id="s-admin-detail">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-name" id="admin-detail-name">—</div>
+      <div class="topbar-date" id="admin-detail-month">—</div>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="showAdminScreen()">← 戻る</button>
+    </div>
+  </div>
+  <div class="scroll-content">
+    <div id="admin-detail-content"></div>
   </div>
 </div>
 
@@ -683,6 +724,194 @@ function selectSetupStaff(name, el) {
   document.querySelectorAll('.staff-cell').forEach(c => c.classList.remove('sel'));
   el.classList.add('sel');
   document.getElementById('start-btn').disabled = false;
+}
+
+// ========== 管理者機能 ==========
+const ADMIN_PASSWORD = 'enapu1119';
+let adminMonth = new Date();
+
+function showAdminLogin() {
+  const pw = prompt('管理者パスワードを入力してください');
+  if (pw === ADMIN_PASSWORD) {
+    adminMonth = new Date();
+    showAdminScreen();
+  } else if (pw !== null) {
+    alert('パスワードが違います');
+  }
+}
+
+function showAdminScreen() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+  document.getElementById('s-admin').classList.add('show');
+  updateAdminMonthLabel();
+  loadAdminData();
+}
+
+function updateAdminMonthLabel() {
+  const label = adminMonth.getFullYear() + '年' + (adminMonth.getMonth()+1) + '月';
+  document.getElementById('admin-month-title').textContent = label;
+  document.getElementById('admin-month-label').textContent = label;
+}
+
+function changeAdminMonth(d) {
+  adminMonth = new Date(adminMonth.getFullYear(), adminMonth.getMonth()+d, 1);
+  updateAdminMonthLabel();
+  loadAdminData();
+}
+
+function monthStr2(d) {
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+
+async function loadAdminData() {
+  const listEl = document.getElementById('admin-staff-list');
+  listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">読み込み中...</div>';
+  const month = monthStr2(adminMonth);
+  const results = [];
+  for (const staff of staffList) {
+    try {
+      const res = await gasGet({ type:'mylog', staff:staff.name, month });
+      if (res.ok) {
+        const kintai = res.kintai || [];
+        const days = new Set(kintai.filter(r=>r.kind==='出勤').map(r=>r.date)).size;
+        const cleans = kintai.filter(r=>r.kind==='清掃完了').length;
+        // 稼働時間計算
+        const dayGroups = {};
+        kintai.forEach(r => {
+          if (!dayGroups[r.date]) dayGroups[r.date]={};
+          const t = String(r.time||'');
+          let time = t;
+          const m = t.match(/T(\d{2}):(\d{2})/);
+          if (m) { let h=parseInt(m[1])+9; if(h>=24)h-=24; time=String(h).padStart(2,'0')+':'+m[2]; }
+          dayGroups[r.date][r.kind] = time;
+        });
+        let totalMins = 0;
+        Object.values(dayGroups).forEach(d => {
+          if (d['出勤'] && d['退勤']) {
+            const [ih,im] = d['出勤'].split(':').map(Number);
+            const [oh,om] = d['退勤'].split(':').map(Number);
+            if (!isNaN(ih)&&!isNaN(oh)) totalMins += (oh*60+om)-(ih*60+im);
+          }
+        });
+        const hours = (totalMins/60).toFixed(1);
+        // 給与計算
+        const staffInfo = staffList.find(s=>s.name===staff.name)||{};
+        const wage = parseFloat(staffInfo.wage)||0;
+        const isFixed = String(staffInfo.transportType)==='固定給';
+        const kyuyo = isFixed ? wage : Math.round((totalMins/60)*wage);
+        results.push({ name:staff.name, days, hours, cleans, kyuyo, kintai });
+      }
+    } catch(e) {}
+  }
+  if (!results.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">データがありません</div>';
+    return;
+  }
+  listEl.innerHTML = results.map(r => `
+    <div onclick="showAdminDetail('${r.name}')" style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:var(--card-shadow);cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:6px">${r.name}</div>
+        <div style="font-size:12px;color:var(--muted)">${r.days}日 / ${r.hours}h / 清掃${r.cleans}件</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:18px;font-weight:700;color:var(--accent)">¥${r.kyuyo.toLocaleString()}</div>
+        <div style="font-size:11px;color:var(--muted)">概算給与</div>
+      </div>
+    </div>
+  `).join('');
+  // データをキャッシュ
+  window._adminResults = results;
+}
+
+async function showAdminDetail(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+  document.getElementById('s-admin-detail').classList.add('show');
+  document.getElementById('admin-detail-name').textContent = name;
+  document.getElementById('admin-detail-month').textContent = monthStr2(adminMonth);
+  const contentEl = document.getElementById('admin-detail-content');
+  contentEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">読み込み中...</div>';
+
+  const month = monthStr2(adminMonth);
+  try {
+    const res = await gasGet({ type:'mylog', staff:name, month });
+    if (!res.ok) { contentEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">データなし</div>'; return; }
+    const kintai = res.kintai || [];
+
+    function formatTime(t) {
+      if (!t) return '—';
+      const s = String(t);
+      if (/^\d{1,2}:\d{2}$/.test(s)) return s;
+      const m = s.match(/T(\d{2}):(\d{2})/);
+      if (m) { let h=parseInt(m[1])+9; if(h>=24)h-=24; return String(h).padStart(2,'0')+':'+m[2]; }
+      return s.slice(0,5);
+    }
+
+    const mapped = kintai.map(r=>({...r, kind:r.kind||r.type, time:formatTime(r.time)}));
+    const days = new Set(mapped.filter(r=>r.kind==='出勤').map(r=>r.date)).size;
+    const cleans = mapped.filter(r=>r.kind==='清掃完了').length;
+    const dayGroups = {};
+    mapped.forEach(r => { if(!dayGroups[r.date]) dayGroups[r.date]={}; dayGroups[r.date][r.kind]=r.time; });
+    let totalMins = 0;
+    Object.values(dayGroups).forEach(d => {
+      if (d['出勤']&&d['退勤']) {
+        const [ih,im]=d['出勤'].split(':').map(Number);
+        const [oh,om]=d['退勤'].split(':').map(Number);
+        if(!isNaN(ih)&&!isNaN(oh)) totalMins+=(oh*60+om)-(ih*60+im);
+      }
+    });
+    const staffInfo = staffList.find(s=>s.name===name)||{};
+    const wage = parseFloat(staffInfo.wage)||0;
+    const isFixed = String(staffInfo.transportType)==='固定給';
+    const kyuyo = isFixed ? wage : Math.round((totalMins/60)*wage);
+
+    // 日別データ
+    const byDate = {};
+    mapped.forEach(r => { if(!byDate[r.date]) byDate[r.date]=[]; byDate[r.date].push(r); });
+    const dates = Object.keys(byDate).sort().reverse();
+
+    contentEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="background:var(--card);border-radius:12px;padding:14px;text-align:center;box-shadow:var(--card-shadow)">
+          <div style="font-size:20px;font-weight:700">${days}日</div>
+          <div style="font-size:11px;color:var(--muted)">出勤日数</div>
+        </div>
+        <div style="background:var(--card);border-radius:12px;padding:14px;text-align:center;box-shadow:var(--card-shadow)">
+          <div style="font-size:20px;font-weight:700">${(totalMins/60).toFixed(1)}h</div>
+          <div style="font-size:11px;color:var(--muted)">稼働時間</div>
+        </div>
+        <div style="background:var(--card);border-radius:12px;padding:14px;text-align:center;box-shadow:var(--card-shadow)">
+          <div style="font-size:20px;font-weight:700">${cleans}件</div>
+          <div style="font-size:11px;color:var(--muted)">清掃件数</div>
+        </div>
+      </div>
+      <div style="background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:var(--card-shadow)">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">概算給与</div>
+        <div style="font-size:28px;font-weight:700;color:var(--accent)">¥${kyuyo.toLocaleString()}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">${isFixed?'固定給':wage+'円/h × '+(totalMins/60).toFixed(1)+'h'}</div>
+      </div>
+      ${dates.map(date => {
+        const d = new Date(date);
+        const items = byDate[date].sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+        return `<div style="background:var(--card);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:var(--card-shadow)">
+          <div style="font-weight:700;margin-bottom:10px">${d.getMonth()+1}月${d.getDate()}日</div>
+          ${items.map(r=>{
+            const dot = r.kind==='出勤'?'#007aff':r.kind==='退勤'?'#8e8e93':r.kind==='清掃完了'?'#ff9500':r.kind==='清掃開始'?'#34c759':'#8e8e93';
+            return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
+              <div style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0"></div>
+              <div style="font-size:13px;color:var(--muted);width:40px">${r.time||'—'}</div>
+              <div style="flex:1">
+                <span style="font-size:13px;font-weight:500">${r.kind}</span>
+                ${r.bukken?`<span style="font-size:12px;color:var(--muted);margin-left:6px">${r.bukken}</span>`:''}
+                ${r.hosoku?`<div style="font-size:11px;color:var(--orange);margin-top:2px">📦 ${r.hosoku}</div>`:''}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }).join('')}
+    `;
+  } catch(e) {
+    contentEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">読み込みエラー</div>';
+  }
 }
 
 function startApp() {
