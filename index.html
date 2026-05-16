@@ -937,7 +937,7 @@ function initApp() {
   document.getElementById('tb-date').textContent = now.getFullYear()+'年'+MONTHS[now.getMonth()]+now.getDate()+'日（'+DAYS[now.getDay()]+'）';
   shiftMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   histMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  payMonth  = new Date(now.getFullYear(), now.getMonth(), 1);
+  payMonth  = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   renderHome();
   renderHistMonth();
   renderPayMonth();
