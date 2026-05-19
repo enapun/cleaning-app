@@ -280,6 +280,10 @@ select.form-control { -webkit-appearance: none; }
       <div style="font-size:16px;font-weight:700" id="admin-month-title">—</div>
       <button class="icon-btn" onclick="changeAdminMonth(1)">›</button>
     </div>
+    <!-- 翌日シフトDiscord送信ボタン -->
+    <div style="margin-bottom:14px">
+      <button onclick="sendTomorrowShiftFromApp()" style="width:100%;padding:14px;background:#5865f2;color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:700;font-family:var(--sans);cursor:pointer;">📨 翌日シフトをDiscordに送る</button>
+    </div>
     <!-- スタッフ一覧 -->
     <div id="admin-staff-list"></div>
   </div>
@@ -737,6 +741,23 @@ function showAdminLogin() {
     showAdminScreen();
   } else if (pw !== null) {
     alert('パスワードが違います');
+  }
+}
+
+async function sendTomorrowShiftFromApp() {
+  if (!confirm('翌日シフトをDiscordに送信しますか？')) return;
+  showLoading('Discordに送信中...');
+  try {
+    const res = await gasGet({ type: 'send_tomorrow_shift' });
+    if (res.ok) {
+      toast('✅ Discordに送信しました！');
+    } else {
+      toast('❌ 送信エラー: ' + (res.error || '不明なエラー'), 3000);
+    }
+  } catch(e) {
+    toast('❌ 通信エラー', 3000);
+  } finally {
+    hideLoading();
   }
 }
 
