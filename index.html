@@ -704,10 +704,10 @@ async function gasPost(data) {
 async function fetchStaff() {
   showLoading('スタッフ一覧を取得中...');
   try {
-    const d = await gasGet({ type: 'staff' });
+    const d = await gasGet({ type: 'init' });
     if (d.ok) {
-      staffList = d.staff;
-      bukkenList = (await gasGet({ type: 'bukken' })).bukken || [];
+      staffList = d.staff || [];
+      bukkenList = d.bukken || [];
       save();
       renderSetupStaff();
       toast('✅ ' + staffList.length + '名のスタッフを取得しました');
@@ -960,8 +960,6 @@ function initApp() {
   histMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   payMonth  = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   renderHome();
-  renderHistMonth();
-  renderPayMonth();
   populateBukkenSelects();
   // 起動時に自動同期（最新データを取得）
   autoSync();
@@ -969,11 +967,13 @@ function initApp() {
 
 async function autoSync() {
   try {
-    const s = await gasGet({ type:'staff' });
-    if (s.ok) staffList = s.staff;
-    const b = await gasGet({ type:'bukken' });
-    if (b.ok) { bukkenList = b.bukken; populateBukkenSelects(); }
-    save();
+    const res = await gasGet({ type:'init' });
+    if (res.ok) {
+      staffList = res.staff || [];
+      bukkenList = res.bukken || [];
+      populateBukkenSelects();
+      save();
+    }
   } catch(e) {}
 }
 
