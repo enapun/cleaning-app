@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>民泊清掃チェック</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal:#0F6E56;--teal-mid:#1D9E75;--teal-l:#E1F5EE;--teal-ll:#f0faf6;
+    --red:#E24B4A;--red-l:#FCEBEB;
+    --gray:#F5F4F0;--gray-d:#888780;
+    --text:#2C2C2A;--text-s:#5F5E5A;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Noto Sans JP',sans-serif;background:#f0faf6;color:var(--text);min-height:100vh;}
+
+  .header{background:var(--teal);padding:14px 14px 10px;position:sticky;top:0;z-index:100;}
+  .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .header-title{color:white;font-size:16px;font-weight:700;}
+  .ng-chip{display:none;background:rgba(255,255,255,0.2);color:white;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;}
+  .ng-chip.show{display:inline;}
+  .header-meta{display:flex;gap:7px;margin-bottom:8px;}
+  .meta-input{flex:1;background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:7px 10px;color:white;font-size:13px;font-family:inherit;outline:none;}
+  .meta-input::placeholder{color:rgba(255,255,255,0.55);}
+  .progress-bar{height:4px;background:rgba(255,255,255,0.25);border-radius:99px;overflow:hidden;}
+  .progress-fill{height:100%;background:white;border-radius:99px;transition:width .35s ease;}
+  .progress-label{color:rgba(255,255,255,.85);font-size:11px;margin-top:4px;text-align:right;}
+
+  .content{padding:10px 10px 130px;}
+
+  .section{margin-bottom:9px;background:white;border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 8px rgba(15,110,86,.08);}
+  .section-header{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:var(--teal);cursor:pointer;user-select:none;}
+  .section-title{color:white;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;}
+  .section-badge{font-size:11px;background:rgba(255,255,255,.2);color:white;padding:2px 9px;border-radius:99px;white-space:nowrap;}
+  .section-badge.done{background:white;color:var(--teal);font-weight:700;}
+
+  .item{display:flex;align-items:center;border-bottom:1px solid #f0f0ee;cursor:pointer;transition:background .1s;}
+  .item:last-child{border-bottom:none;}
+  .item:active{background:var(--teal-ll);}
+  .item.checked{background:var(--teal-ll);}
+  .item.ng{background:var(--red-l);}
+  .check-area{width:50px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:13px 0;}
+  .check-circle{width:27px;height:27px;border-radius:50%;border:2px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:15px;background:white;transition:all .15s;}
+  .item.checked .check-circle{background:var(--teal-mid);border-color:var(--teal-mid);color:white;}
+  .item.ng .check-circle{background:var(--red);border-color:var(--red);color:white;}
+  .item-body{flex:1;padding:11px 8px 11px 0;}
+  .item-num{font-size:10px;color:var(--gray-d);margin-bottom:1px;}
+  .item-label{font-size:14px;font-weight:500;line-height:1.4;}
+  .item.checked .item-label{color:var(--teal);}
+  .item.ng .item-label{color:var(--red);}
+  .item-note{font-size:11px;color:var(--gray-d);margin-top:2px;line-height:1.4;}
+  .item-actions{display:flex;align-items:center;gap:4px;padding:0 10px 0 4px;flex-shrink:0;}
+  .ng-btn{width:32px;height:32px;border-radius:50%;border:1.5px solid #ddd;background:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#bbb;cursor:pointer;flex-shrink:0;transition:all .15s;}
+  .item.ng .ng-btn{border-color:var(--red);background:var(--red-l);color:var(--red);}
+  .photo-btn{width:32px;height:32px;border-radius:8px;border:1.5px dashed #ccc;background:white;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;position:relative;overflow:hidden;}
+  .photo-btn.has-photo{border-style:solid;border-color:var(--teal-mid);}
+  .photo-btn img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+  .photo-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .photo-count{font-size:10px;color:var(--teal);font-weight:700;position:absolute;bottom:1px;right:2px;background:rgba(255,255,255,.85);line-height:1;border-radius:3px;padding:0 1px;}
+
+  .photo-strip{display:none;padding:6px 10px 8px 50px;gap:6px;flex-wrap:wrap;}
+  .photo-strip.show{display:flex;}
+  .thumb-wrap{position:relative;width:56px;height:56px;border-radius:8px;overflow:hidden;border:1.5px solid var(--teal-l);}
+  .thumb-wrap img{width:100%;height:100%;object-fit:cover;}
+  .thumb-del{position:absolute;top:1px;right:1px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.55);color:white;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+
+  .bottom-bar{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #eee;padding:10px 12px;display:flex;gap:8px;z-index:200;}
+  .btn-line{flex:1;background:#06C755;color:white;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
+  .btn-reset{width:48px;background:var(--gray);color:var(--gray-d);border:none;border-radius:10px;font-size:12px;font-family:inherit;cursor:pointer;}
+
+  .complete-banner{display:none;background:var(--teal);color:white;text-align:center;padding:10px;font-size:13px;font-weight:700;}
+  .complete-banner.show{display:block;}
+
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:center;justify-content:center;}
+  .modal-bg.show{display:flex;}
+  .modal{background:white;border-radius:16px;padding:20px;width:88vw;max-width:360px;}
+  .modal h3{font-size:15px;font-weight:700;margin-bottom:10px;color:var(--teal);}
+  .modal-steps{font-size:12px;color:var(--text-s);line-height:2.1;background:var(--gray);border-radius:8px;padding:10px 14px;margin-bottom:14px;}
+  .modal-close{width:100%;padding:12px;background:var(--teal);color:white;border:none;border-radius:9px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="header-title">🏠 民泊清掃チェック</div>
+    <span id="ng-chip" class="ng-chip"></span>
+  </div>
+  <div class="header-meta">
+    <input class="meta-input" id="roomInput" placeholder="物件名・部屋番号" type="text">
+    <input class="meta-input" id="staffInput" placeholder="担当者名" type="text">
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="progress-label" id="progressLabel">0 / 0 完了</div>
+</div>
+
+<div class="complete-banner" id="completeBanner">✅ 全項目チェック完了！お疲れ様でした</div>
+<div class="content" id="content"></div>
+
+<div class="bottom-bar">
+  <button class="btn-line" onclick="openModal()">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="white"><path d="M19.365 9.89c.5 0 .866.37.866.866s-.366.866-.866.866h-2.244v1.253h2.244c.5 0 .866.37.866.866s-.366.866-.866.866H16.254a.866.866 0 01-.866-.866V9.89c0-.495.37-.866.866-.866h3.11zm-5.2 0c.495 0 .865.37.865.866v3.851a.866.866 0 01-1.73 0V9.89c0-.495.37-.866.865-.866zm-2.006 0c.37 0 .693.22.82.567l1.68 3.851a.866.866 0 01-1.6.655l-.095-.247H11.18l-.095.247a.866.866 0 01-1.6-.655l1.678-3.851a.866.866 0 01.82-.567zm-.175 1.96l-.452 1.04h.903l-.45-1.04zM8.336 9.89c.495 0 .866.37.866.866v2.31l1.98-2.728a.866.866 0 011.562.518v3.851a.866.866 0 01-1.73 0v-2.31l-1.98 2.728a.866.866 0 01-1.562-.518V9.89c0-.495.37-.866.864-.866zM12 2C6.477 2 2 6.065 2 11.07c0 4.497 3.452 8.245 8.12 9.004a.9.9 0 01.75.892v1.668c0 .13.145.206.257.135l4.3-2.796a.43.43 0 01.296-.087C20.548 19.886 22 15.698 22 11.07 22 6.065 17.523 2 12 2z"/></svg>
+    LINEで報告を送る
+  </button>
+  <button class="btn-reset" onclick="confirmReset()">リセット</button>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <h3>📤 LINEで写真つき報告</h3>
+    <div class="modal-steps" id="modalSteps"></div>
+    <button class="modal-close" onclick="doSendLine()">テキストをLINEで送る →</button>
+  </div>
+</div>
+
+<script>
+const SECTIONS=[
+  {name:"玄関",icon:"🚪",items:[
+    {n:1, l:"靴脱ぎ場の清掃",       note:"砂などが取れているか"},
+    {n:2, l:"靴箱のチェック",         note:"汚れていないか、忘れ物などがないか"},
+    {n:3, l:"傘立て",                 note:"傘は畳まれているか、折れていれば破棄"},
+    {n:4, l:"マット類",               note:"コロコロ清掃したか"},
+    {n:5, l:"スリッパ設置",           note:"設置されているか"},
+  ]},
+  {name:"リビング",icon:"🛋️",items:[
+    {n:6,  l:"ソファ・クッション",     note:"汚れ、髪の毛などを取れているか"},
+    {n:7,  l:"テーブル・チェア",       note:"汚れのほか、ネジの緩みがあれば対応"},
+    {n:8,  l:"テレビ",                 note:"画面は映るか、リモコンに汚れはないか、TVの埃"},
+    {n:9,  l:"照明、絵画など",         note:"埃の除去"},
+    {n:10, l:"床",                     note:"フローリングの場合最後にクイックル"},
+    {n:11, l:"窓サッシ・手前スペース", note:"埃等の除去"},
+    {n:12, l:"その他設置物",           note:"動作確認や埃汚れの除去"},
+    {n:13, l:"ゴミ箱",                 note:"ゴミ箱の蓋裏や側面もチェック"},
+    {n:14, l:"箱ティッシュの設置",     note:"設置されているか"},
+  ]},
+  {name:"キッチン",icon:"🍳",items:[
+    {n:16, l:"ケトル",                 note:"水を捨てる、必要あれば煮沸洗浄"},
+    {n:17, l:"炊飯器",                 note:"使用時は必ず裏蓋を外して清掃"},
+    {n:18, l:"コンロ周りの油汚れ",     note:"IHは台座の隙間をブラシ・ヘラで清掃"},
+    {n:19, l:"コンロ周り壁",           note:"油汚れ用の洗剤で清掃"},
+    {n:20, l:"冷蔵庫・電子レンジ",     note:"扉裏や内面角、天井など漏れないこと"},
+    {n:21, l:"カラトリー",             note:"塩素含む汚れがないか"},
+    {n:22, l:"引き出し・調理器具",     note:"ボックス含め汚れがないか"},
+    {n:23, l:"蛇口",                   note:"接合部ブラシ清掃、蛇口はピカピカに"},
+    {n:24, l:"シンク",                 note:"排水口とネット、セスキで拭きあげる"},
+    {n:25, l:"食器洗剤",               note:"滑りなく綺麗にする、8割以上補充"},
+    {n:26, l:"ゲスト用ゴミ袋の設置",   note:"設置されているか"},
+  ]},
+  {name:"寝室",icon:"🛏️",items:[
+    {n:27, l:"ベッド下",               note:"埃やゴミがないか写真も撮る"},
+    {n:28, l:"ベッド・マットレス",     note:"カバー類にも髪の毛等ないかチェック"},
+    {n:29, l:"布団",                   note:"綺麗に畳むこと"},
+    {n:30, l:"テーブル等",             note:"綺麗に拭きあげる、ティッシュがあるか"},
+    {n:31, l:"クローゼット・押し入れ", note:"忘れ物はないか、戸車レールの溝清掃"},
+    {n:32, l:"ハンガー",               note:"綺麗にまとめているか"},
+    {n:33, l:"窓サッシ・手前スペース", note:"埃等の除去"},
+    {n:34, l:"その他設置物",           note:"埃と汚れの除去、設置位置"},
+    {n:35, l:"照明・絵画など",         note:"埃の除去"},
+    {n:36, l:"予備布団など",           note:"数があるか確認、使用時は汚れチェック"},
+    {n:37, l:"床",                     note:"フローリングの場合最後にクイックル"},
+    {n:38, l:"箱ティッシュの設置",     note:"設置されているか"},
+  ]},
+  {name:"洗面所",icon:"🪥",items:[
+    {n:39, l:"鏡",                     note:"ピカピカに拭きあげる"},
+    {n:40, l:"蛇口",                   note:"接合部ブラシ清掃、蛇口はピカピカに"},
+    {n:41, l:"化粧台の収納部分",       note:"汚れがひどければ外してブラシで磨く"},
+    {n:42, l:"シンク",                 note:"洗剤とブラシで磨く、排水口"},
+    {n:43, l:"洗面台周り",             note:"細い部分も埃や汚れを取り除く"},
+    {n:44, l:"下部引き出し",           note:"中の汚れ、忘れ物確認"},
+    {n:45, l:"アメニティ",             note:"規定数あるか、正しい位置にあるか"},
+    {n:46, l:"床",                     note:"細い部分、洗濯機があればその周辺も"},
+    {n:47, l:"キレイキレイの設置",     note:"滑りなく綺麗にする、8割以上補充"},
+  ]},
+  {name:"トイレ",icon:"🚽",items:[
+    {n:48, l:"壁",                     note:"クエン酸使用し臭いの元を取り除く"},
+    {n:49, l:"手洗い管周り",           note:"接合部はブラシ、汚れがないよう磨く"},
+    {n:50, l:"便座・便座蓋",           note:"表裏丁寧に清掃する"},
+    {n:51, l:"便座取り付け部分",       note:"外して清掃する、フィルターチェック"},
+    {n:52, l:"便器",                   note:"屈んで上部も確認しながら清掃"},
+    {n:53, l:"便座と床の接合部分",     note:"ヘラやブラシを使用して清掃"},
+    {n:54, l:"床",                     note:"クエン酸も使用し拭きあげる"},
+    {n:55, l:"ペーパーホルダー",       note:"綺麗に拭く、ペーパー＋3個の予備"},
+    {n:56, l:"その他",                 note:"換気扇は必ずオン、消臭剤の残量、埃チェック"},
+  ]},
+  {name:"風呂",icon:"🛁",items:[
+    {n:57, l:"シャンプー類ボトル",     note:"滑りなく綺麗にする、8割以上補充"},
+    {n:58, l:"ボトル棚",               note:"上記同様"},
+    {n:59, l:"壁・天井",               note:"カビ、水垢取り、排水口"},
+    {n:60, l:"扉",                     note:"取手、壁部分、レールに髪の毛等なく"},
+    {n:61, l:"浴槽",                   note:"滑りなく、排水口の中の髪の毛まで"},
+    {n:62, l:"換気扇",                 note:"必ずオンを確認"},
+    {n:63, l:"拭き上げ",               note:"必要時は髪の毛が残らないよう"},
+    {n:64, l:"その他",                 note:"換気扇は必ずオンに、扉は閉める"},
+  ]},
+  {name:"階段・廊下",icon:"🪜",items:[
+    {n:65, l:"床",                     note:"その他床と同様"},
+    {n:66, l:"巾木",                   note:"箒等で埃は落として掃除機"},
+    {n:67, l:"窓",                     note:"その他窓と同様"},
+    {n:68, l:"消化器",                 note:"使用期限確認、埃等除去"},
+  ]},
+  {name:"洗濯機・乾燥機",icon:"🫧",items:[
+    {n:69, l:"洗濯槽内の確認",         note:"フィルター清掃、洗濯槽底に髪の毛ないか"},
+    {n:70, l:"ゴムパッキン",           note:"埃、カビ、汚れ"},
+    {n:71, l:"洗濯機蓋",               note:"取手部分、その他拭き上げ"},
+    {n:72, l:"乾燥機内扉",             note:"埃除去、拭き上げ"},
+    {n:73, l:"家電周り",               note:"埃が溜まらないように、髪の毛除去"},
+  ]},
+];
+
+const state={};
+SECTIONS.forEach((s,si)=>s.items.forEach((_,ii)=>{state[`${si}-${ii}`]={status:0,photos:[]}}));
+
+function totalItems(){return Object.keys(state).length;}
+function doneCount(){return Object.values(state).filter(v=>v.status===1).length;}
+function ngCount(){return Object.values(state).filter(v=>v.status===2).length;}
+function totalPhotos(){return Object.values(state).reduce((a,v)=>a+v.photos.length,0);}
+
+function tap(si,ii){
+  const k=`${si}-${ii}`;
+  state[k].status=state[k].status===1?0:1;
+  refreshItem(si,ii);updateProgress();
+}
+function tapNg(si,ii,e){
+  e.stopPropagation();
+  const k=`${si}-${ii}`;
+  state[k].status=state[k].status===2?0:2;
+  refreshItem(si,ii);updateProgress();
+}
+function handlePhoto(si,ii,input){
+  Array.from(input.files).forEach(f=>{
+    const r=new FileReader();
+    r.onload=e=>{state[`${si}-${ii}`].photos.push(e.target.result);refreshItem(si,ii);updateProgress();};
+    r.readAsDataURL(f);
+  });
+  input.value='';
+}
+function delPhoto(si,ii,idx,e){
+  e.stopPropagation();
+  state[`${si}-${ii}`].photos.splice(idx,1);
+  refreshItem(si,ii);updateProgress();
+}
+
+function refreshItem(si,ii){
+  const {status,photos}=state[`${si}-${ii}`];
+  const el=document.getElementById(`item-${si}-${ii}`);
+  el.className='item'+(status===1?' checked':status===2?' ng':'');
+  el.querySelector('.check-circle').textContent=status===1?'✓':status===2?'✕':'';
+  const pb=el.querySelector('.photo-btn');
+  pb.className='photo-btn'+(photos.length>0?' has-photo':'');
+  const img=pb.querySelector('img');
+  if(photos.length>0){img.src=photos[photos.length-1];img.style.display='block';}
+  else img.style.display='none';
+  pb.querySelector('.photo-count').textContent=photos.length>0?photos.length+'枚':'';
+  const strip=document.getElementById(`strip-${si}-${ii}`);
+  if(photos.length>0){
+    strip.className='photo-strip show';
+    strip.innerHTML=photos.map((url,i)=>`<div class="thumb-wrap"><img src="${url}"><div class="thumb-del" onclick="delPhoto(${si},${ii},${i},event)">✕</div></div>`).join('');
+  } else {strip.className='photo-strip';strip.innerHTML='';}
+  updateSectionBadge(si);
+}
+
+function updateSectionBadge(si){
+  const items=SECTIONS[si].items;
+  const done=items.filter((_,ii)=>state[`${si}-${ii}`].status===1).length;
+  const ng=items.filter((_,ii)=>state[`${si}-${ii}`].status===2).length;
+  const total=items.length;
+  const badge=document.getElementById(`badge-${si}`);
+  const allDone=done===total;
+  badge.textContent=allDone?'完了✓':(ng>0?`${done}/${total} NG:${ng}`:`${done}/${total}`);
+  badge.className='section-badge'+(allDone?' done':'');
+}
+
+function updateProgress(){
+  const done=doneCount(),ng=ngCount(),total=totalItems(),photos=totalPhotos();
+  const pct=Math.round(done/total*100);
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressLabel').textContent=
+    `${done}/${total} 完了${ng>0?' · NG:'+ng+'件':''}${photos>0?' · 📷'+photos+'枚':''}`;
+  const chip=document.getElementById('ng-chip');
+  if(ng>0){chip.textContent=`NG ${ng}件`;chip.className='ng-chip show';}
+  else chip.className='ng-chip';
+  document.getElementById('completeBanner').className='complete-banner'+(done===total&&ng===0?' show':'');
+}
+
+function render(){
+  const content=document.getElementById('content');
+  content.innerHTML='';
+  SECTIONS.forEach((sec,si)=>{
+    const div=document.createElement('div');
+    div.className='section';
+    const itemsHTML=sec.items.map((item,ii)=>`
+      <div class="item" id="item-${si}-${ii}" onclick="tap(${si},${ii})">
+        <div class="check-area"><div class="check-circle"></div></div>
+        <div class="item-body">
+          <div class="item-num">No.${item.n}</div>
+          <div class="item-label">${item.l}</div>
+          <div class="item-note">${item.note}</div>
+        </div>
+        <div class="item-actions">
+          <div class="ng-btn" onclick="tapNg(${si},${ii},event)">NG</div>
+          <div class="photo-btn" onclick="event.stopPropagation()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><rect x="3" y="7" width="18" height="14" rx="2"/><circle cx="12" cy="14" r="3"/><path d="M8 7l1.5-3h5L16 7"/></svg>
+            <img src="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:6px;">
+            <span class="photo-count"></span>
+            <input type="file" accept="image/*" multiple onchange="handlePhoto(${si},${ii},this)">
+          </div>
+        </div>
+      </div>
+      <div class="photo-strip" id="strip-${si}-${ii}"></div>`).join('');
+    div.innerHTML=`
+      <div class="section-header" onclick="toggleSection(${si})">
+        <div class="section-title">${sec.icon} ${sec.name}</div>
+        <span class="section-badge" id="badge-${si}">0/${sec.items.length}</span>
+      </div>
+      <div class="section-body" id="body-${si}">${itemsHTML}</div>`;
+    content.appendChild(div);
+  });
+  updateProgress();
+}
+
+function toggleSection(si){
+  const b=document.getElementById(`body-${si}`);
+  b.style.display=b.style.display==='none'?'block':'none';
+}
+
+function buildReportText(){
+  const room=document.getElementById('roomInput').value||'（未入力）';
+  const staff=document.getElementById('staffInput').value||'（未入力）';
+  const done=doneCount(),ng=ngCount(),total=totalItems(),photos=totalPhotos();
+  const now=new Date();
+  const dateStr=`${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  let t=`🏠 民泊清掃完了報告\n━━━━━━━━━━━\n`;
+  t+=`📍 物件：${room}\n👤 担当：${staff}\n🕐 時刻：${dateStr}\n`;
+  t+=`━━━━━━━━━━━\n✅ 完了：${done}/${total}項目\n`;
+  if(photos>0) t+=`📷 写真：${photos}枚（別途送付）\n`;
+  if(ng>0){
+    t+=`⚠️ NG：${ng}件\n\n【NG項目】\n`;
+    SECTIONS.forEach((sec,si)=>{
+      const ngItems=sec.items.filter((_,ii)=>state[`${si}-${ii}`].status===2);
+      if(ngItems.length>0) t+=`${sec.icon}${sec.name}：${ngItems.map(i=>i.l).join('、')}\n`;
+    });
+  } else {
+    t+=`\n問題なし！全項目クリア🎉`;
+  }
+  return t;
+}
+
+function openModal(){
+  const photos=totalPhotos();
+  document.getElementById('modalSteps').innerHTML=
+    photos>0
+      ?`① 「テキストをLINEで送る」をタップ<br>② LINEでテキストを送信<br>③ 同じトークに📷写真 ${photos}枚を送る`
+      :`① 「テキストをLINEで送る」をタップ<br>② LINEでテキストを送信`;
+  document.getElementById('modalBg').className='modal-bg show';
+}
+function closeModalOutside(e){if(e.target===document.getElementById('modalBg'))document.getElementById('modalBg').className='modal-bg';}
+function doSendLine(){
+  document.getElementById('modalBg').className='modal-bg';
+  window.open(`https://line.me/R/share?text=${encodeURIComponent(buildReportText())}`,'_blank');
+}
+
+function confirmReset(){
+  if(confirm('チェックと写真をすべてリセットしますか？')){
+    SECTIONS.forEach((s,si)=>s.items.forEach((_,ii)=>{state[`${si}-${ii}`]={status:0,photos:[]}}));
+    document.getElementById('roomInput').value='';
+    document.getElementById('staffInput').value='';
+    render();
+  }
+}
+
+render();
+</script>
+</body>
+</html>
