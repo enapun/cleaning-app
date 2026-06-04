@@ -11,6 +11,7 @@
     --red:#E24B4A;--red-l:#FCEBEB;
     --gray:#F5F4F0;--gray-d:#888780;
     --text:#2C2C2A;--text-s:#5F5E5A;
+    --discord:#5865F2;--discord-l:#eef0ff;
     --radius:12px;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -67,18 +68,15 @@
   .thumb-del{position:absolute;top:1px;right:1px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.55);color:white;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
 
   .bottom-bar{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #eee;padding:10px 12px;display:flex;gap:8px;z-index:200;}
-  .btn-line{flex:1;background:#06C755;color:white;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
+  .btn-discord{flex:1;background:var(--discord);color:white;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
+  .btn-discord:disabled{background:#aaa;cursor:not-allowed;}
   .btn-reset{width:48px;background:var(--gray);color:var(--gray-d);border:none;border-radius:10px;font-size:12px;font-family:inherit;cursor:pointer;}
 
   .complete-banner{display:none;background:var(--teal);color:white;text-align:center;padding:10px;font-size:13px;font-weight:700;}
   .complete-banner.show{display:block;}
 
-  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;align-items:center;justify-content:center;}
-  .modal-bg.show{display:flex;}
-  .modal{background:white;border-radius:16px;padding:20px;width:88vw;max-width:360px;}
-  .modal h3{font-size:15px;font-weight:700;margin-bottom:10px;color:var(--teal);}
-  .modal-steps{font-size:12px;color:var(--text-s);line-height:2.1;background:var(--gray);border-radius:8px;padding:10px 14px;margin-bottom:14px;}
-  .modal-close{width:100%;padding:12px;background:var(--teal);color:white;border:none;border-radius:9px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
+  .toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#2C2C2A;color:white;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;}
 </style>
 </head>
 <body>
@@ -100,22 +98,18 @@
 <div class="content" id="content"></div>
 
 <div class="bottom-bar">
-  <button class="btn-line" onclick="openModal()">
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="white"><path d="M19.365 9.89c.5 0 .866.37.866.866s-.366.866-.866.866h-2.244v1.253h2.244c.5 0 .866.37.866.866s-.366.866-.866.866H16.254a.866.866 0 01-.866-.866V9.89c0-.495.37-.866.866-.866h3.11zm-5.2 0c.495 0 .865.37.865.866v3.851a.866.866 0 01-1.73 0V9.89c0-.495.37-.866.865-.866zm-2.006 0c.37 0 .693.22.82.567l1.68 3.851a.866.866 0 01-1.6.655l-.095-.247H11.18l-.095.247a.866.866 0 01-1.6-.655l1.678-3.851a.866.866 0 01.82-.567zm-.175 1.96l-.452 1.04h.903l-.45-1.04zM8.336 9.89c.495 0 .866.37.866.866v2.31l1.98-2.728a.866.866 0 011.562.518v3.851a.866.866 0 01-1.73 0v-2.31l-1.98 2.728a.866.866 0 01-1.562-.518V9.89c0-.495.37-.866.864-.866zM12 2C6.477 2 2 6.065 2 11.07c0 4.497 3.452 8.245 8.12 9.004a.9.9 0 01.75.892v1.668c0 .13.145.206.257.135l4.3-2.796a.43.43 0 01.296-.087C20.548 19.886 22 15.698 22 11.07 22 6.065 17.523 2 12 2z"/></svg>
-    LINEで報告を送る
+  <button class="btn-discord" id="sendBtn" onclick="sendToDiscord()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z"/></svg>
+    Discordに送信
   </button>
   <button class="btn-reset" onclick="confirmReset()">リセット</button>
 </div>
 
-<div class="modal-bg" id="modalBg" onclick="closeModalOutside(event)">
-  <div class="modal">
-    <h3>📤 LINEで写真つき報告</h3>
-    <div class="modal-steps" id="modalSteps"></div>
-    <button class="modal-close" onclick="doSendLine()">テキストをLINEで送る →</button>
-  </div>
-</div>
+<div class="toast" id="toast"></div>
 
 <script>
+const WEBHOOK = "https://discord.com/api/webhooks/1512034911152766976/YbJTxGFqaknBgGjeK_ITZT_NUZTthhzCKl2seRDJruqAhH32WiOZJpnRI20TRGBaHNJB";
+
 const SECTIONS=[
   {name:"玄関",icon:"🚪",items:[
     {n:1, l:"靴脱ぎ場の清掃",       note:"砂などが取れているか"},
@@ -217,6 +211,12 @@ function doneCount(){return Object.values(state).filter(v=>v.status===1).length;
 function ngCount(){return Object.values(state).filter(v=>v.status===2).length;}
 function totalPhotos(){return Object.values(state).reduce((a,v)=>a+v.photos.length,0);}
 
+function showToast(msg, duration=3000){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show';
+  setTimeout(()=>t.className='toast',duration);
+}
+
 function tap(si,ii){
   const k=`${si}-${ii}`;
   state[k].status=state[k].status===1?0:1;
@@ -231,7 +231,7 @@ function tapNg(si,ii,e){
 function handlePhoto(si,ii,input){
   Array.from(input.files).forEach(f=>{
     const r=new FileReader();
-    r.onload=e=>{state[`${si}-${ii}`].photos.push(e.target.result);refreshItem(si,ii);updateProgress();};
+    r.onload=e=>{state[`${si}-${ii}`].photos.push({dataUrl:e.target.result,name:f.name,type:f.type});refreshItem(si,ii);updateProgress();};
     r.readAsDataURL(f);
   });
   input.value='';
@@ -250,13 +250,13 @@ function refreshItem(si,ii){
   const pb=el.querySelector('.photo-btn');
   pb.className='photo-btn'+(photos.length>0?' has-photo':'');
   const img=pb.querySelector('img');
-  if(photos.length>0){img.src=photos[photos.length-1];img.style.display='block';}
+  if(photos.length>0){img.src=photos[photos.length-1].dataUrl;img.style.display='block';}
   else img.style.display='none';
   pb.querySelector('.photo-count').textContent=photos.length>0?photos.length+'枚':'';
   const strip=document.getElementById(`strip-${si}-${ii}`);
   if(photos.length>0){
     strip.className='photo-strip show';
-    strip.innerHTML=photos.map((url,i)=>`<div class="thumb-wrap"><img src="${url}"><div class="thumb-del" onclick="delPhoto(${si},${ii},${i},event)">✕</div></div>`).join('');
+    strip.innerHTML=photos.map((p,i)=>`<div class="thumb-wrap"><img src="${p.dataUrl}"><div class="thumb-del" onclick="delPhoto(${si},${ii},${i},event)">✕</div></div>`).join('');
   } else {strip.className='photo-strip';strip.innerHTML='';}
   updateSectionBadge(si);
 }
@@ -282,6 +282,103 @@ function updateProgress(){
   if(ng>0){chip.textContent=`NG ${ng}件`;chip.className='ng-chip show';}
   else chip.className='ng-chip';
   document.getElementById('completeBanner').className='complete-banner'+(done===total&&ng===0?' show':'');
+}
+
+function buildEmbed(){
+  const room=document.getElementById('roomInput').value||'（未入力）';
+  const staff=document.getElementById('staffInput').value||'（未入力）';
+  const done=doneCount(),ng=ngCount(),total=totalItems();
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const color=ng>0?0xE24B4A:done===total?0x1D9E75:0x0F6E56;
+
+  let desc=`✅ **完了：${done}/${total}項目**`;
+  if(ng>0){
+    desc+=`\n⚠️ **NG：${ng}件**\n`;
+    SECTIONS.forEach((sec,si)=>{
+      const ngItems=sec.items.filter((_,ii)=>state[`${si}-${ii}`].status===2);
+      if(ngItems.length>0) desc+=`\n${sec.icon} **${sec.name}**：${ngItems.map(i=>i.l).join('、')}`;
+    });
+  } else {
+    desc+=`\n\n問題なし！全項目クリア 🎉`;
+  }
+
+  return {
+    embeds:[{
+      title:`🏠 民泊清掃完了報告`,
+      description:desc,
+      color,
+      fields:[
+        {name:'📍 物件',value:room,inline:true},
+        {name:'👤 担当',value:staff,inline:true},
+        {name:'🕐 時刻',value:dateStr,inline:true},
+      ],
+      footer:{text:'民泊清掃チェックシステム'}
+    }]
+  };
+}
+
+async function dataUrlToBlob(dataUrl){
+  const res=await fetch(dataUrl);
+  return await res.blob();
+}
+
+async function sendToDiscord(){
+  const btn=document.getElementById('sendBtn');
+  btn.disabled=true;
+  btn.textContent='送信中...';
+
+  try {
+    // 全写真を収集
+    const allPhotos=[];
+    SECTIONS.forEach((sec,si)=>{
+      sec.items.forEach((_,ii)=>{
+        const {photos}=state[`${si}-${ii}`];
+        photos.forEach((p,pi)=>{
+          allPhotos.push({...p, label:`${sec.icon}${sec.name} No.${sec.items[ii].n}`});
+        });
+      });
+    });
+
+    const embed=buildEmbed();
+
+    if(allPhotos.length===0){
+      // テキストのみ
+      const res=await fetch(WEBHOOK,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(embed)
+      });
+      if(!res.ok) throw new Error('送信失敗');
+    } else {
+      // テキスト先送り
+      const res=await fetch(WEBHOOK,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(embed)
+      });
+      if(!res.ok) throw new Error('テキスト送信失敗');
+
+      // 写真を1枚ずつ送信
+      for(let i=0;i<allPhotos.length;i++){
+        const p=allPhotos[i];
+        const blob=await dataUrlToBlob(p.dataUrl);
+        const ext=p.type.split('/')[1]||'jpg';
+        const fd=new FormData();
+        fd.append('file',blob,`photo_${i+1}.${ext}`);
+        fd.append('payload_json',JSON.stringify({content:`📷 **${p.label}** (${i+1}/${allPhotos.length}枚目)`}));
+        const r=await fetch(WEBHOOK,{method:'POST',body:fd});
+        if(!r.ok) throw new Error(`写真${i+1}枚目の送信失敗`);
+      }
+    }
+
+    showToast(`✅ Discordに送信しました！${allPhotos.length>0?'（写真'+allPhotos.length+'枚含む）':''}`);
+  } catch(err){
+    showToast('❌ 送信に失敗しました：'+err.message, 4000);
+  } finally {
+    btn.disabled=false;
+    btn.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z"/></svg> Discordに送信`;
+  }
 }
 
 function render(){
@@ -323,42 +420,6 @@ function render(){
 function toggleSection(si){
   const b=document.getElementById(`body-${si}`);
   b.style.display=b.style.display==='none'?'block':'none';
-}
-
-function buildReportText(){
-  const room=document.getElementById('roomInput').value||'（未入力）';
-  const staff=document.getElementById('staffInput').value||'（未入力）';
-  const done=doneCount(),ng=ngCount(),total=totalItems(),photos=totalPhotos();
-  const now=new Date();
-  const dateStr=`${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
-  let t=`🏠 民泊清掃完了報告\n━━━━━━━━━━━\n`;
-  t+=`📍 物件：${room}\n👤 担当：${staff}\n🕐 時刻：${dateStr}\n`;
-  t+=`━━━━━━━━━━━\n✅ 完了：${done}/${total}項目\n`;
-  if(photos>0) t+=`📷 写真：${photos}枚（別途送付）\n`;
-  if(ng>0){
-    t+=`⚠️ NG：${ng}件\n\n【NG項目】\n`;
-    SECTIONS.forEach((sec,si)=>{
-      const ngItems=sec.items.filter((_,ii)=>state[`${si}-${ii}`].status===2);
-      if(ngItems.length>0) t+=`${sec.icon}${sec.name}：${ngItems.map(i=>i.l).join('、')}\n`;
-    });
-  } else {
-    t+=`\n問題なし！全項目クリア🎉`;
-  }
-  return t;
-}
-
-function openModal(){
-  const photos=totalPhotos();
-  document.getElementById('modalSteps').innerHTML=
-    photos>0
-      ?`① 「テキストをLINEで送る」をタップ<br>② LINEでテキストを送信<br>③ 同じトークに📷写真 ${photos}枚を送る`
-      :`① 「テキストをLINEで送る」をタップ<br>② LINEでテキストを送信`;
-  document.getElementById('modalBg').className='modal-bg show';
-}
-function closeModalOutside(e){if(e.target===document.getElementById('modalBg'))document.getElementById('modalBg').className='modal-bg';}
-function doSendLine(){
-  document.getElementById('modalBg').className='modal-bg';
-  window.open(`https://line.me/R/share?text=${encodeURIComponent(buildReportText())}`,'_blank');
 }
 
 function confirmReset(){
