@@ -963,6 +963,8 @@ function initApp() {
   populateBukkenSelects();
   // 起動時に自動同期（最新データを取得）
   autoSync();
+  // チェック結果を確認
+  setTimeout(checkForCheckResult, 1500);
 }
 
 async function autoSync() {
@@ -1830,6 +1832,90 @@ if (currentStaff) {
 } else {
   fetchStaff();
 }
+
+// ===== 清掃チェック結果 =====
+async function checkForCheckResult() {
+  if (!GAS_URL || !currentStaff) return;
+  try {
+    const todayStr = today();
+    const res = await gasGet({ type: 'check_result', staff: currentStaff, date: todayStr });
+    if (res.ok && res.results && res.results.length > 0) {
+      showCheckResultScreen(res.results[0]);
+    }
+  } catch(e) {}
+}
+
+function showCheckResultScreen(result) {
+  const done = parseInt(result.doneCount) || 0;
+  const total = parseInt(result.totalCount) || 0;
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  const ngItems = result.ngItems ? result.ngItems.split('|').filter(Boolean) : [];
+  const checker = result.checker || '社員';
+  const bukken = result.bukken || '';
+
+  document.getElementById('cr-meta').textContent = (bukken ? bukken + '　' : '') + checker + ' がチェック';
+  document.getElementById('cr-score').textContent = done + ' / ' + total + ' 項目　(' + pct + '%)';
+  setTimeout(() => { document.getElementById('cr-bar').style.width = pct + '%'; }, 100);
+
+  if (ngItems.length > 0) {
+    document.getElementById('cr-ng-section').style.display = 'block';
+    document.getElementById('cr-ok-msg').style.display = 'none';
+    document.getElementById('cr-icon').textContent = '⚠️';
+    document.getElementById('cr-ng-list').innerHTML = ngItems.map(item => '・' + item).join('<br>');
+  } else {
+    document.getElementById('cr-ng-section').style.display = 'none';
+    document.getElementById('cr-ok-msg').style.display = 'block';
+    document.getElementById('cr-icon').textContent = '✅';
+  }
+
+  // store current result for confirm
+  window._pendingCheckResult = result;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+  document.getElementById('s-check-result').classList.add('show');
+}
+
+async function confirmCheckResult() {
+  const result = window._pendingCheckResult;
+  if (!result) return;
+  try {
+    await gasGet({ type: 'confirm_check', staff: result.staff, date: result.date });
+  } catch(e) {}
+  window._pendingCheckResult = null;
+  // 通常の勤怠画面へ
+  document.getElementById('s-check-result').classList.remove('show');
+  document.getElementById('s-app').classList.add('show');
+}
+
 </script>
+
+<!-- ===== 清掃チェック結果画面 ===== -->
+<div class="screen" id="s-check-result">
+  <div style="min-height:100vh;background:linear-gradient(160deg,#0F6E56,#1D9E75);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;">
+    <div style="font-size:56px;margin-bottom:12px" id="cr-icon">📋</div>
+    <div style="color:white;font-size:22px;font-weight:700;margin-bottom:4px;text-align:center">社員チェック完了</div>
+    <div style="color:rgba(255,255,255,0.8);font-size:14px;margin-bottom:28px" id="cr-meta"></div>
+    <div style="background:white;border-radius:20px;padding:24px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+      <div style="margin-bottom:16px;">
+        <div style="font-size:13px;color:#888;margin-bottom:4px">完了率</div>
+        <div style="font-size:28px;font-weight:700;color:#0F6E56" id="cr-score"></div>
+        <div style="height:6px;background:#eee;border-radius:99px;margin-top:8px;overflow:hidden">
+          <div id="cr-bar" style="height:100%;background:#1D9E75;border-radius:99px;transition:width .5s ease;width:0%"></div>
+        </div>
+      </div>
+      <div id="cr-ng-section" style="display:none;margin-bottom:16px;padding:14px;background:#fff5f5;border-radius:12px;border-left:4px solid #E24B4A;">
+        <div style="font-size:13px;font-weight:700;color:#E24B4A;margin-bottom:8px">⚠️ NG項目</div>
+        <div id="cr-ng-list" style="font-size:13px;color:#2C2C2A;line-height:1.8;"></div>
+      </div>
+      <div id="cr-ok-msg" style="display:none;margin-bottom:16px;padding:14px;background:#f0faf6;border-radius:12px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:4px">🎉</div>
+        <div style="font-size:14px;font-weight:600;color:#0F6E56">問題なし！全項目クリア</div>
+      </div>
+      <button onclick="confirmCheckResult()" style="width:100%;padding:16px;background:#0F6E56;color:white;border:none;border-radius:14px;font-size:16px;font-weight:700;font-family:var(--sans);cursor:pointer;letter-spacing:0.02em;">
+        確認しました ✓
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
