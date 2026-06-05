@@ -9,34 +9,30 @@
   :root {
     --teal:#0F6E56;--teal-mid:#1D9E75;--teal-l:#E1F5EE;--teal-ll:#f0faf6;
     --red:#E24B4A;--red-l:#FCEBEB;--red-mid:#f07070;
-    --gray:#F5F4F0;--gray-d:#888780;
-    --text:#2C2C2A;--text-s:#5F5E5A;
-    --discord:#5865F2;
-    --radius:12px;
+    --gray:#F5F4F0;--gray-d:#888780;--text:#2C2C2A;--text-s:#5F5E5A;
+    --discord:#5865F2;--radius:12px;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   body{font-family:'Noto Sans JP',sans-serif;background:#f0faf6;color:var(--text);min-height:100vh;}
-
   .header{background:var(--teal);padding:14px 14px 10px;position:sticky;top:0;z-index:100;}
   .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
   .header-title{color:white;font-size:16px;font-weight:700;}
   .ng-chip{display:none;background:rgba(255,255,255,0.2);color:white;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;}
   .ng-chip.show{display:inline;}
-  .header-meta{display:flex;gap:7px;margin-bottom:8px;}
+  .header-meta{display:flex;gap:7px;margin-bottom:6px;}
   .meta-input{flex:1;background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:7px 10px;color:white;font-size:13px;font-family:inherit;outline:none;}
   .meta-input::placeholder{color:rgba(255,255,255,0.55);}
+  .meta-select{flex:1;background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:7px 10px;color:white;font-size:13px;font-family:inherit;outline:none;appearance:none;-webkit-appearance:none;}
+  .meta-select option{color:var(--text);background:white;}
   .progress-bar{height:4px;background:rgba(255,255,255,0.25);border-radius:99px;overflow:hidden;}
   .progress-fill{height:100%;background:white;border-radius:99px;transition:width .35s ease;}
   .progress-label{color:rgba(255,255,255,.85);font-size:11px;margin-top:4px;text-align:right;}
-
-  .content{padding:10px 10px 130px;}
-
+  .content{padding:10px 10px 140px;}
   .section{margin-bottom:9px;background:white;border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 8px rgba(15,110,86,.08);}
   .section-header{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:var(--teal);cursor:pointer;user-select:none;}
   .section-title{color:white;font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;}
   .section-badge{font-size:11px;background:rgba(255,255,255,.2);color:white;padding:2px 9px;border-radius:99px;white-space:nowrap;}
   .section-badge.done{background:white;color:var(--teal);font-weight:700;}
-
   .item{display:flex;align-items:center;border-bottom:1px solid #f0f0ee;cursor:pointer;transition:background .1s;}
   .item.checked{background:var(--teal-ll);}
   .item.ng{background:var(--red-l);}
@@ -52,460 +48,545 @@
   .item.ng .item-label{color:var(--red);}
   .item-note{font-size:11px;color:var(--gray-d);margin-top:2px;line-height:1.4;}
   .item-actions{display:flex;align-items:center;gap:4px;padding:0 10px 0 4px;flex-shrink:0;align-self:flex-start;padding-top:13px;}
-  .ng-btn{width:32px;height:32px;border-radius:50%;border:1.5px solid #ddd;background:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#bbb;cursor:pointer;flex-shrink:0;transition:all .15s;}
+  .ng-btn{width:32px;height:32px;border-radius:50%;border:1.5px solid #ddd;background:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#bbb;cursor:pointer;flex-shrink:0;}
   .item.ng .ng-btn{border-color:var(--red);background:var(--red-l);color:var(--red);}
   .photo-btn{width:32px;height:32px;border-radius:8px;border:1.5px dashed #ccc;background:white;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;position:relative;overflow:hidden;}
   .photo-btn.has-photo{border-style:solid;border-color:var(--teal-mid);}
   .photo-btn img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
   .photo-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
   .photo-count{font-size:10px;color:var(--teal);font-weight:700;position:absolute;bottom:1px;right:2px;background:rgba(255,255,255,.85);line-height:1;border-radius:3px;padding:0 1px;}
-
-  /* 備考エリア */
   .item-extra{display:none;padding:0 12px 10px 50px;gap:6px;flex-direction:column;}
   .item-extra.show{display:flex;}
   .memo-input{width:100%;border:1.5px solid #e0e0dc;border-radius:8px;padding:7px 10px;font-size:13px;font-family:inherit;color:var(--text);resize:none;outline:none;background:white;min-height:38px;}
   .item.ng .memo-input{border-color:var(--red-mid);background:#fff8f8;}
   .memo-input:focus{border-color:var(--teal-mid);}
-  .item.ng .memo-input:focus{border-color:var(--red);}
-
   .photo-strip{display:flex;gap:6px;flex-wrap:wrap;}
   .thumb-wrap{position:relative;width:52px;height:52px;border-radius:8px;overflow:hidden;border:1.5px solid var(--teal-l);flex-shrink:0;}
   .thumb-wrap img{width:100%;height:100%;object-fit:cover;}
   .thumb-del{position:absolute;top:1px;right:1px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.55);color:white;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
-
+  .comment-section{margin:0 10px 10px;background:white;border-radius:var(--radius);box-shadow:0 2px 8px rgba(15,110,86,.08);overflow:hidden;}
+  .comment-header{background:var(--teal);padding:10px 13px;}
+  .comment-header-title{color:white;font-size:14px;font-weight:700;}
+  .comment-body{padding:12px;}
+  .comment-textarea{width:100%;border:1.5px solid #e0e0dc;border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;color:var(--text);resize:none;outline:none;background:white;min-height:80px;line-height:1.6;}
+  .comment-textarea:focus{border-color:var(--teal-mid);}
+  .comment-textarea::placeholder{color:#bbb;}
   .bottom-bar{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #eee;padding:10px 12px;display:flex;gap:8px;z-index:200;}
-  .btn-discord{flex:1;background:var(--discord);color:white;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
-  .btn-discord:disabled{background:#aaa;cursor:not-allowed;}
+  .btn-send{flex:1;background:var(--discord);color:white;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
+  .btn-send:disabled{background:#aaa;cursor:not-allowed;}
   .btn-reset{width:48px;background:var(--gray);color:var(--gray-d);border:none;border-radius:10px;font-size:12px;font-family:inherit;cursor:pointer;}
-
   .complete-banner{display:none;background:var(--teal);color:white;text-align:center;padding:10px;font-size:13px;font-weight:700;}
   .complete-banner.show{display:block;}
-
   .toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#2C2C2A;color:white;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
   .toast.show{opacity:1;}
 </style>
 </head>
 <body>
-
 <div class="header">
   <div class="header-top">
-    <div class="header-title">🏠 民泊清掃チェック</div>
+    <div class="header-title">&#127968; 民泊清掃チェック</div>
     <span id="ng-chip" class="ng-chip"></span>
   </div>
   <div class="header-meta">
     <input class="meta-input" id="roomInput" placeholder="物件名・部屋番号" type="text">
-    <input class="meta-input" id="staffInput" placeholder="清掃担当者名" type="text">
     <input class="meta-input" id="checkerInput" placeholder="チェック担当者名" type="text">
+  </div>
+  <div class="header-meta">
+    <select class="meta-select" id="staffSelect">
+      <option value="">清掃担当者を読み込み中...</option>
+    </select>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   <div class="progress-label" id="progressLabel">0 / 0 完了</div>
 </div>
-
-<div class="complete-banner" id="completeBanner">✅ 全項目チェック完了！お疲れ様でした</div>
+<div class="complete-banner" id="completeBanner">&#10003; 全項目チェック完了！お疲れ様でした</div>
 <div class="content" id="content"></div>
-
+<div class="comment-section">
+  <div class="comment-header"><div class="comment-header-title">&#9998; 一言メッセージ（任意）</div></div>
+  <div class="comment-body">
+    <textarea class="comment-textarea" id="commentInput" placeholder="担当者へのひとことを入力してください&#10;例：全体的に丁寧でした！次回はコンロ周りを重点的に。"></textarea>
+  </div>
+</div>
 <div class="bottom-bar">
-  <button class="btn-discord" id="sendBtn" onclick="sendToDiscord()">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z"/></svg>
-    Discordに送信
-  </button>
+  <button class="btn-send" id="sendBtn" onclick="sendAll()">送信</button>
   <button class="btn-reset" onclick="confirmReset()">リセット</button>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-const WEBHOOK="https://discord.com/api/webhooks/1512034911152766976/YbJTxGFqaknBgGjeK_ITZT_NUZTthhzCKl2seRDJruqAhH32WiOZJpnRI20TRGBaHNJB";
+var WEBHOOK = 'https://discord.com/api/webhooks/1512034911152766976/YbJTxGFqaknBgGjeK_ITZT_NUZTthhzCKl2seRDJruqAhH32WiOZJpnRI20TRGBaHNJB';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbxHG7L7Gr8AorV5vm_yqKsINpl3Xfyi-9eQIzRnMAXJd_ZH73tGREiiOyPfMlsDiOHj3w/exec';
 
-const SECTIONS=[
-  {name:"玄関",icon:"🚪",items:[
-    {n:1,l:"靴脱ぎ場の清掃",note:"砂などが取れているか"},
-    {n:2,l:"靴箱のチェック",note:"汚れていないか、忘れ物などがないか"},
-    {n:3,l:"傘立て",note:"傘は畳まれているか、折れていれば破棄"},
-    {n:4,l:"マット類",note:"コロコロ清掃したか"},
-    {n:5,l:"スリッパ設置",note:"設置されているか"},
+var SECTIONS = [
+  {name:'玄関',icon:'🚪',items:[
+    {n:1,l:'靴脱ぎ場の清掃',note:'砂などが取れているか'},
+    {n:2,l:'靴箱のチェック',note:'汚れていないか、忘れ物などがないか'},
+    {n:3,l:'傘立て',note:'傘は畳まれているか、折れていれば破棄'},
+    {n:4,l:'マット類',note:'コロコロ清掃したか'},
+    {n:5,l:'スリッパ設置',note:'設置されているか'},
   ]},
-  {name:"リビング",icon:"🛋️",items:[
-    {n:6,l:"ソファ・クッション",note:"汚れ、髪の毛などを取れているか"},
-    {n:7,l:"テーブル・チェア",note:"汚れのほか、ネジの緩みがあれば対応"},
-    {n:8,l:"テレビ",note:"画面は映るか、リモコンに汚れはないか、TVの埃"},
-    {n:9,l:"照明、絵画など",note:"埃の除去"},
-    {n:10,l:"床",note:"フローリングの場合最後にクイックル"},
-    {n:11,l:"窓サッシ・手前スペース",note:"埃等の除去"},
-    {n:12,l:"その他設置物",note:"動作確認や埃汚れの除去"},
-    {n:13,l:"ゴミ箱",note:"ゴミ箱の蓋裏や側面もチェック"},
-    {n:14,l:"箱ティッシュの設置",note:"設置されているか"},
+  {name:'リビング',icon:'🛋️',items:[
+    {n:6,l:'ソファ・クッション',note:'汚れ、髪の毛などを取れているか'},
+    {n:7,l:'テーブル・チェア',note:'汚れのほか、ネジの緩みがあれば対応'},
+    {n:8,l:'テレビ',note:'画面は映るか、リモコンに汚れはないか、TVの埃'},
+    {n:9,l:'照明、絵画など',note:'埃の除去'},
+    {n:10,l:'床',note:'フローリングの場合最後にクイックル'},
+    {n:11,l:'窓サッシ・手前スペース',note:'埃等の除去'},
+    {n:12,l:'その他設置物',note:'動作確認や埃汚れの除去'},
+    {n:13,l:'ゴミ箱',note:'ゴミ箱の蓋裏や側面もチェック'},
+    {n:14,l:'箱ティッシュの設置',note:'設置されているか'},
   ]},
-  {name:"キッチン",icon:"🍳",items:[
-    {n:16,l:"ケトル",note:"水を捨てる、必要あれば煮沸洗浄"},
-    {n:17,l:"炊飯器",note:"使用時は必ず裏蓋を外して清掃"},
-    {n:18,l:"コンロ周りの油汚れ",note:"IHは台座の隙間をブラシ・ヘラで清掃"},
-    {n:19,l:"コンロ周り壁",note:"油汚れ用の洗剤で清掃"},
-    {n:20,l:"冷蔵庫・電子レンジ",note:"扉裏や内面角、天井など漏れないこと"},
-    {n:21,l:"カラトリー",note:"塩素含む汚れがないか"},
-    {n:22,l:"引き出し・調理器具",note:"ボックス含め汚れがないか"},
-    {n:23,l:"蛇口",note:"接合部ブラシ清掃、蛇口はピカピカに"},
-    {n:24,l:"シンク",note:"排水口とネット、セスキで拭きあげる"},
-    {n:25,l:"食器洗剤",note:"滑りなく綺麗にする、8割以上補充"},
-    {n:26,l:"ゲスト用ゴミ袋の設置",note:"設置されているか"},
+  {name:'キッチン',icon:'🍳',items:[
+    {n:16,l:'ケトル',note:'水を捨てる、必要あれば煮沸洗浄'},
+    {n:17,l:'炊飯器',note:'使用時は必ず裏蓋を外して清掃'},
+    {n:18,l:'コンロ周りの油汚れ',note:'IHは台座の隙間をブラシ・ヘラで清掃'},
+    {n:19,l:'コンロ周り壁',note:'油汚れ用の洗剤で清掃'},
+    {n:20,l:'冷蔵庫・電子レンジ',note:'扉裏や内面角、天井など漏れないこと'},
+    {n:21,l:'カラトリー',note:'塩素含む汚れがないか'},
+    {n:22,l:'引き出し・調理器具',note:'ボックス含め汚れがないか'},
+    {n:23,l:'蛇口',note:'接合部ブラシ清掃、蛇口はピカピカに'},
+    {n:24,l:'シンク',note:'排水口とネット、セスキで拭きあげる'},
+    {n:25,l:'食器洗剤',note:'滑りなく綺麗にする、8割以上補充'},
+    {n:26,l:'ゲスト用ゴミ袋の設置',note:'設置されているか'},
   ]},
-  {name:"寝室",icon:"🛏️",items:[
-    {n:27,l:"ベッド下",note:"埃やゴミがないか写真も撮る"},
-    {n:28,l:"ベッド・マットレス",note:"カバー類にも髪の毛等ないかチェック"},
-    {n:29,l:"布団",note:"綺麗に畳むこと"},
-    {n:30,l:"テーブル等",note:"綺麗に拭きあげる、ティッシュがあるか"},
-    {n:31,l:"クローゼット・押し入れ",note:"忘れ物はないか、戸車レールの溝清掃"},
-    {n:32,l:"ハンガー",note:"綺麗にまとめているか"},
-    {n:33,l:"窓サッシ・手前スペース",note:"埃等の除去"},
-    {n:34,l:"その他設置物",note:"埃と汚れの除去、設置位置"},
-    {n:35,l:"照明・絵画など",note:"埃の除去"},
-    {n:36,l:"予備布団など",note:"数があるか確認、使用時は汚れチェック"},
-    {n:37,l:"床",note:"フローリングの場合最後にクイックル"},
-    {n:38,l:"箱ティッシュの設置",note:"設置されているか"},
+  {name:'寝室',icon:'🛏️',items:[
+    {n:27,l:'ベッド下',note:'埃やゴミがないか写真も撮る'},
+    {n:28,l:'ベッド・マットレス',note:'カバー類にも髪の毛等ないかチェック'},
+    {n:29,l:'布団',note:'綺麗に畳むこと'},
+    {n:30,l:'テーブル等',note:'綺麗に拭きあげる、ティッシュがあるか'},
+    {n:31,l:'クローゼット・押し入れ',note:'忘れ物はないか、戸車レールの溝清掃'},
+    {n:32,l:'ハンガー',note:'綺麗にまとめているか'},
+    {n:33,l:'窓サッシ・手前スペース',note:'埃等の除去'},
+    {n:34,l:'その他設置物',note:'埃と汚れの除去、設置位置'},
+    {n:35,l:'照明・絵画など',note:'埃の除去'},
+    {n:36,l:'予備布団など',note:'数があるか確認、使用時は汚れチェック'},
+    {n:37,l:'床',note:'フローリングの場合最後にクイックル'},
+    {n:38,l:'箱ティッシュの設置',note:'設置されているか'},
   ]},
-  {name:"洗面所",icon:"🪥",items:[
-    {n:39,l:"鏡",note:"ピカピカに拭きあげる"},
-    {n:40,l:"蛇口",note:"接合部ブラシ清掃、蛇口はピカピカに"},
-    {n:41,l:"化粧台の収納部分",note:"汚れがひどければ外してブラシで磨く"},
-    {n:42,l:"シンク",note:"洗剤とブラシで磨く、排水口"},
-    {n:43,l:"洗面台周り",note:"細い部分も埃や汚れを取り除く"},
-    {n:44,l:"下部引き出し",note:"中の汚れ、忘れ物確認"},
-    {n:45,l:"アメニティ",note:"規定数あるか、正しい位置にあるか"},
-    {n:46,l:"床",note:"細い部分、洗濯機があればその周辺も"},
-    {n:47,l:"キレイキレイの設置",note:"滑りなく綺麗にする、8割以上補充"},
+  {name:'洗面所',icon:'🪥',items:[
+    {n:39,l:'鏡',note:'ピカピカに拭きあげる'},
+    {n:40,l:'蛇口',note:'接合部ブラシ清掃、蛇口はピカピカに'},
+    {n:41,l:'化粧台の収納部分',note:'汚れがひどければ外してブラシで磨く'},
+    {n:42,l:'シンク',note:'洗剤とブラシで磨く、排水口'},
+    {n:43,l:'洗面台周り',note:'細い部分も埃や汚れを取り除く'},
+    {n:44,l:'下部引き出し',note:'中の汚れ、忘れ物確認'},
+    {n:45,l:'アメニティ',note:'規定数あるか、正しい位置にあるか'},
+    {n:46,l:'床',note:'細い部分、洗濯機があればその周辺も'},
+    {n:47,l:'キレイキレイの設置',note:'滑りなく綺麗にする、8割以上補充'},
   ]},
-  {name:"トイレ",icon:"🚽",items:[
-    {n:48,l:"壁",note:"クエン酸使用し臭いの元を取り除く"},
-    {n:49,l:"手洗い管周り",note:"接合部はブラシ、汚れがないよう磨く"},
-    {n:50,l:"便座・便座蓋",note:"表裏丁寧に清掃する"},
-    {n:51,l:"便座取り付け部分",note:"外して清掃する、フィルターチェック"},
-    {n:52,l:"便器",note:"屈んで上部も確認しながら清掃"},
-    {n:53,l:"便座と床の接合部分",note:"ヘラやブラシを使用して清掃"},
-    {n:54,l:"床",note:"クエン酸も使用し拭きあげる"},
-    {n:55,l:"ペーパーホルダー",note:"綺麗に拭く、ペーパー＋3個の予備"},
-    {n:56,l:"その他",note:"換気扇は必ずオン、消臭剤の残量、埃チェック"},
+  {name:'トイレ',icon:'🚽',items:[
+    {n:48,l:'壁',note:'クエン酸使用し臭いの元を取り除く'},
+    {n:49,l:'手洗い管周り',note:'接合部はブラシ、汚れがないよう磨く'},
+    {n:50,l:'便座・便座蓋',note:'表裏丁寧に清掃する'},
+    {n:51,l:'便座取り付け部分',note:'外して清掃する、フィルターチェック'},
+    {n:52,l:'便器',note:'屈んで上部も確認しながら清掃'},
+    {n:53,l:'便座と床の接合部分',note:'ヘラやブラシを使用して清掃'},
+    {n:54,l:'床',note:'クエン酸も使用し拭きあげる'},
+    {n:55,l:'ペーパーホルダー',note:'綺麗に拭く、ペーパー＋3個の予備'},
+    {n:56,l:'その他',note:'換気扇は必ずオン、消臭剤の残量、埃チェック'},
   ]},
-  {name:"風呂",icon:"🛁",items:[
-    {n:57,l:"シャンプー類ボトル",note:"滑りなく綺麗にする、8割以上補充"},
-    {n:58,l:"ボトル棚",note:"上記同様"},
-    {n:59,l:"壁・天井",note:"カビ、水垢取り、排水口"},
-    {n:60,l:"扉",note:"取手、壁部分、レールに髪の毛等なく"},
-    {n:61,l:"浴槽",note:"滑りなく、排水口の中の髪の毛まで"},
-    {n:62,l:"換気扇",note:"必ずオンを確認"},
-    {n:63,l:"拭き上げ",note:"必要時は髪の毛が残らないよう"},
-    {n:64,l:"その他",note:"換気扇は必ずオンに、扉は閉める"},
+  {name:'風呂',icon:'🛁',items:[
+    {n:57,l:'シャンプー類ボトル',note:'滑りなく綺麗にする、8割以上補充'},
+    {n:58,l:'ボトル棚',note:'上記同様'},
+    {n:59,l:'壁・天井',note:'カビ、水垢取り、排水口'},
+    {n:60,l:'扉',note:'取手、壁部分、レールに髪の毛等なく'},
+    {n:61,l:'浴槽',note:'滑りなく、排水口の中の髪の毛まで'},
+    {n:62,l:'換気扇',note:'必ずオンを確認'},
+    {n:63,l:'拭き上げ',note:'必要時は髪の毛が残らないよう'},
+    {n:64,l:'その他',note:'換気扇は必ずオンに、扉は閉める'},
   ]},
-  {name:"階段・廊下",icon:"🪜",items:[
-    {n:65,l:"床",note:"その他床と同様"},
-    {n:66,l:"巾木",note:"箒等で埃は落として掃除機"},
-    {n:67,l:"窓",note:"その他窓と同様"},
-    {n:68,l:"消化器",note:"使用期限確認、埃等除去"},
+  {name:'階段・廊下',icon:'🪜',items:[
+    {n:65,l:'床',note:'その他床と同様'},
+    {n:66,l:'巾木',note:'箒等で埃は落として掃除機'},
+    {n:67,l:'窓',note:'その他窓と同様'},
+    {n:68,l:'消化器',note:'使用期限確認、埃等除去'},
   ]},
-  {name:"洗濯機・乾燥機",icon:"🫧",items:[
-    {n:69,l:"洗濯槽内の確認",note:"フィルター清掃、洗濯槽底に髪の毛ないか"},
-    {n:70,l:"ゴムパッキン",note:"埃、カビ、汚れ"},
-    {n:71,l:"洗濯機蓋",note:"取手部分、その他拭き上げ"},
-    {n:72,l:"乾燥機内扉",note:"埃除去、拭き上げ"},
-    {n:73,l:"家電周り",note:"埃が溜まらないように、髪の毛除去"},
+  {name:'洗濯機・乾燥機',icon:'🫧',items:[
+    {n:69,l:'洗濯槽内の確認',note:'フィルター清掃、洗濯槽底に髪の毛ないか'},
+    {n:70,l:'ゴムパッキン',note:'埃、カビ、汚れ'},
+    {n:71,l:'洗濯機蓋',note:'取手部分、その他拭き上げ'},
+    {n:72,l:'乾燥機内扉',note:'埃除去、拭き上げ'},
+    {n:73,l:'家電周り',note:'埃が溜まらないように、髪の毛除去'},
   ]},
 ];
 
-const state={};
-SECTIONS.forEach((s,si)=>s.items.forEach((_,ii)=>{
-  state[`${si}-${ii}`]={status:0,memo:'',photos:[]};
-}));
+var state = {};
+SECTIONS.forEach(function(s, si) {
+  s.items.forEach(function(_, ii) {
+    state[si + '-' + ii] = {status:0, memo:'', photos:[]};
+  });
+});
 
-function totalItems(){return Object.keys(state).length;}
-function doneCount(){return Object.values(state).filter(v=>v.status===1).length;}
-function ngCount(){return Object.values(state).filter(v=>v.status===2).length;}
-function totalPhotos(){return Object.values(state).reduce((a,v)=>a+v.photos.length,0);}
+function totalItems() { return Object.keys(state).length; }
+function doneCount()  { return Object.values(state).filter(function(v){return v.status===1;}).length; }
+function ngCount()    { return Object.values(state).filter(function(v){return v.status===2;}).length; }
+function totalPhotos(){ return Object.values(state).reduce(function(a,v){return a+v.photos.length;},0); }
 
-function showToast(msg,duration=3000){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.className='toast show';
-  setTimeout(()=>t.className='toast',duration);
+function showToast(msg, duration) {
+  duration = duration || 3000;
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show';
+  setTimeout(function(){ t.className = 'toast'; }, duration);
 }
 
-function tap(si,ii){
-  const k=`${si}-${ii}`;
-  state[k].status=state[k].status===1?0:1;
-  refreshItem(si,ii);updateProgress();
+function loadStaffList() {
+  var sel = document.getElementById('staffSelect');
+  var cbName = 'cb_staff_' + Date.now();
+  var timer = setTimeout(function() {
+    sel.innerHTML = '<option value="">取得失敗 - ページを再読み込みしてください</option>';
+  }, 10000);
+  window[cbName] = function(data) {
+    clearTimeout(timer);
+    delete window[cbName];
+    if (data.ok && data.staff && data.staff.length > 0) {
+      sel.innerHTML = '<option value="">清掃担当者を選択してください</option>';
+      data.staff.forEach(function(s) {
+        var opt = document.createElement('option');
+        opt.value = s.name; opt.textContent = s.name;
+        sel.appendChild(opt);
+      });
+    } else {
+      sel.innerHTML = '<option value="">取得失敗 - ページを再読み込みしてください</option>';
+    }
+  };
+  var script = document.createElement('script');
+  script.src = GAS_URL + '?type=init&callback=' + cbName;
+  script.onerror = function() {
+    clearTimeout(timer);
+    sel.innerHTML = '<option value="">取得失敗 - ページを再読み込みしてください</option>';
+  };
+  document.head.appendChild(script);
 }
-function tapNg(si,ii,e){
+
+function tap(si, ii) {
+  var k = si + '-' + ii;
+  state[k].status = state[k].status === 1 ? 0 : 1;
+  refreshItem(si, ii); updateProgress();
+}
+function tapNg(si, ii, e) {
   e.stopPropagation();
-  const k=`${si}-${ii}`;
-  state[k].status=state[k].status===2?0:2;
-  refreshItem(si,ii);updateProgress();
-  // NGにしたら備考欄にフォーカス
-  if(state[k].status===2){
-    setTimeout(()=>{
-      const m=document.getElementById(`memo-${si}-${ii}`);
-      if(m) m.focus();
-    },100);
+  var k = si + '-' + ii;
+  state[k].status = state[k].status === 2 ? 0 : 2;
+  refreshItem(si, ii); updateProgress();
+  if (state[k].status === 2) {
+    setTimeout(function() {
+      var m = document.getElementById('memo-' + si + '-' + ii);
+      if (m) m.focus();
+    }, 100);
   }
 }
-function updateMemo(si,ii,val){
-  state[`${si}-${ii}`].memo=val;
-}
-function handlePhoto(si,ii,input){
-  Array.from(input.files).forEach(f=>{
-    const r=new FileReader();
-    r.onload=e=>{state[`${si}-${ii}`].photos.push({dataUrl:e.target.result,name:f.name,type:f.type});refreshItem(si,ii);updateProgress();};
+function updateMemo(si, ii, val) { state[si + '-' + ii].memo = val; }
+function handlePhoto(si, ii, input) {
+  Array.from(input.files).forEach(function(f) {
+    var r = new FileReader();
+    r.onload = function(e) {
+      state[si + '-' + ii].photos.push({dataUrl: e.target.result, name: f.name, type: f.type});
+      refreshItem(si, ii); updateProgress();
+    };
     r.readAsDataURL(f);
   });
-  input.value='';
+  input.value = '';
 }
-function delPhoto(si,ii,idx,e){
+function delPhoto(si, ii, idx, e) {
   e.stopPropagation();
-  state[`${si}-${ii}`].photos.splice(idx,1);
-  refreshItem(si,ii);updateProgress();
+  state[si + '-' + ii].photos.splice(idx, 1);
+  refreshItem(si, ii); updateProgress();
 }
 
-function refreshItem(si,ii){
-  const {status,memo,photos}=state[`${si}-${ii}`];
-  const el=document.getElementById(`item-${si}-${ii}`);
-  el.className='item'+(status===1?' checked':status===2?' ng':'');
-  el.querySelector('.check-circle').textContent=status===1?'✓':status===2?'✕':'';
-
-  // 備考・写真エリア：チェック済みかNG or 写真あり or メモあり で表示
-  const extra=document.getElementById(`extra-${si}-${ii}`);
-  const showExtra=status!==0||photos.length>0||memo;
-  extra.className='item-extra'+(showExtra?' show':'');
-
-  // メモ
-  const memoEl=document.getElementById(`memo-${si}-${ii}`);
-  if(memoEl && memoEl.value !== memo) memoEl.value=memo;
-
-  // 写真
-  const pb=el.querySelector('.photo-btn');
-  pb.className='photo-btn'+(photos.length>0?' has-photo':'');
-  const img=pb.querySelector('img');
-  if(photos.length>0){img.src=photos[photos.length-1].dataUrl;img.style.display='block';}
-  else img.style.display='none';
-  pb.querySelector('.photo-count').textContent=photos.length>0?photos.length+'枚':'';
-
-  const strip=document.getElementById(`strip-${si}-${ii}`);
-  if(photos.length>0){
-    strip.innerHTML=photos.map((p,i)=>`<div class="thumb-wrap"><img src="${p.dataUrl}"><div class="thumb-del" onclick="delPhoto(${si},${ii},${i},event)">✕</div></div>`).join('');
-  } else strip.innerHTML='';
-
+function refreshItem(si, ii) {
+  var k = si + '-' + ii;
+  var s = state[k];
+  var el = document.getElementById('item-' + k);
+  el.className = 'item' + (s.status===1?' checked':s.status===2?' ng':'');
+  el.querySelector('.check-circle').textContent = s.status===1 ? '✓' : s.status===2 ? '✕' : '';
+  var extra = document.getElementById('extra-' + k);
+  extra.className = 'item-extra' + (s.status!==0||s.photos.length>0||s.memo ? ' show' : '');
+  var memoEl = document.getElementById('memo-' + k);
+  if (memoEl && memoEl.value !== s.memo) memoEl.value = s.memo;
+  var pb = el.querySelector('.photo-btn');
+  pb.className = 'photo-btn' + (s.photos.length > 0 ? ' has-photo' : '');
+  var img = pb.querySelector('img');
+  if (s.photos.length > 0) { img.src = s.photos[s.photos.length-1].dataUrl; img.style.display = 'block'; }
+  else img.style.display = 'none';
+  pb.querySelector('.photo-count').textContent = s.photos.length > 0 ? s.photos.length + '枚' : '';
+  var strip = document.getElementById('strip-' + k);
+  if (s.photos.length > 0) {
+    strip.innerHTML = s.photos.map(function(p, i) {
+      return '<div class="thumb-wrap"><img src="' + p.dataUrl + '"><div class="thumb-del" onclick="delPhoto(' + si + ',' + ii + ',' + i + ',event)">✕</div></div>';
+    }).join('');
+  } else strip.innerHTML = '';
   updateSectionBadge(si);
 }
 
-function updateSectionBadge(si){
-  const items=SECTIONS[si].items;
-  const done=items.filter((_,ii)=>state[`${si}-${ii}`].status===1).length;
-  const ng=items.filter((_,ii)=>state[`${si}-${ii}`].status===2).length;
-  const total=items.length;
-  const badge=document.getElementById(`badge-${si}`);
-  const allDone=done===total;
-  badge.textContent=allDone?'完了✓':(ng>0?`${done}/${total} NG:${ng}`:`${done}/${total}`);
-  badge.className='section-badge'+(allDone?' done':'');
+function updateSectionBadge(si) {
+  var items = SECTIONS[si].items;
+  var done = items.filter(function(_,ii){ return state[si+'-'+ii].status===1; }).length;
+  var ng   = items.filter(function(_,ii){ return state[si+'-'+ii].status===2; }).length;
+  var total = items.length;
+  var badge = document.getElementById('badge-' + si);
+  var allDone = done === total;
+  badge.textContent = allDone ? '完了✓' : (ng>0 ? done+'/'+total+' NG:'+ng : done+'/'+total);
+  badge.className = 'section-badge' + (allDone ? ' done' : '');
 }
 
-function updateProgress(){
-  const done=doneCount(),ng=ngCount(),total=totalItems(),photos=totalPhotos();
-  const pct=Math.round(done/total*100);
-  document.getElementById('progressFill').style.width=pct+'%';
-  document.getElementById('progressLabel').textContent=
-    `${done}/${total} 完了${ng>0?' · NG:'+ng+'件':''}${photos>0?' · 📷'+photos+'枚':''}`;
-  const chip=document.getElementById('ng-chip');
-  if(ng>0){chip.textContent=`NG ${ng}件`;chip.className='ng-chip show';}
-  else chip.className='ng-chip';
-  document.getElementById('completeBanner').className='complete-banner'+(done===total&&ng===0?' show':'');
+function updateProgress() {
+  var done = doneCount(), ng = ngCount(), total = totalItems(), photos = totalPhotos();
+  var pct = Math.round(done / total * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent =
+    done + '/' + total + ' 完了' + (ng>0?' · NG:'+ng+'件':'') + (photos>0?' · 📷'+photos+'枚':'');
+  var chip = document.getElementById('ng-chip');
+  if (ng > 0) { chip.textContent = 'NG ' + ng + '件'; chip.className = 'ng-chip show'; }
+  else chip.className = 'ng-chip';
+  document.getElementById('completeBanner').className = 'complete-banner' + (done===total&&ng===0?' show':'');
 }
 
-function buildEmbed(){
-  const room=document.getElementById('roomInput').value||'（未入力）';
-  const staff=document.getElementById('staffInput').value||'（未入力）';
-  const done=doneCount(),ng=ngCount(),total=totalItems();
-  const now=new Date();
-  const dateStr=`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const color=ng>0?0xE24B4A:done===total?0x1D9E75:0x0F6E56;
-
-  let desc=`✅ **完了：${done}/${total}項目**`;
-  if(ng>0){
-    desc+=`\n⚠️ **NG：${ng}件**\n`;
-    SECTIONS.forEach((sec,si)=>{
-      const ngItems=sec.items.filter((_,ii)=>state[`${si}-${ii}`].status===2);
-      if(ngItems.length>0){
-        desc+=`\n${sec.icon} **${sec.name}**\n`;
-        ngItems.forEach((_,ii)=>{
-          const realIdx=sec.items.indexOf(_);
-          // find actual ii
-        });
-        sec.items.forEach((item,ii)=>{
-          if(state[`${si}-${ii}`].status===2){
-            const memo=state[`${si}-${ii}`].memo;
-            desc+=`> No.${item.n} ${item.l}`;
-            if(memo) desc+=`\n> 📝 ${memo}`;
-            desc+='\n';
-          }
-        });
-      }
-    });
-  } else {
-    desc+=`\n\n問題なし！全項目クリア 🎉`;
-  }
-
-  return {
-    embeds:[{
-      title:'🏠 民泊清掃完了報告',
-      description:desc,
-      color,
-      fields:[
-        {name:'📍 物件',value:room,inline:true},
-        {name:'👤 担当',value:staff,inline:true},
-        {name:'🕐 時刻',value:dateStr,inline:true},
-      ],
-      footer:{text:'民泊清掃チェックシステム'}
-    }]
-  };
-}
-
-async function dataUrlToBlob(dataUrl){
-  const res=await fetch(dataUrl);
-  return await res.blob();
-}
-
-async function sendToDiscord(){
-  const btn=document.getElementById('sendBtn');
-  btn.disabled=true;
-  btn.textContent='送信中...';
-  try{
-    const room=document.getElementById('roomInput').value||'';
-    const staff=document.getElementById('staffInput').value||'';
-    const checker=document.getElementById('checkerInput').value||'社員';
-    if(!staff){showToast('❌ 担当者名を入力してください',3000);btn.disabled=false;btn.innerHTML=discordBtnHTML();return;}
-
-    const done=doneCount(),ng=ngCount(),total=totalItems();
-    const now=new Date();
-    const dateStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-
-    // NG項目をまとめる
-    const ngList=[];
-    SECTIONS.forEach((sec,si)=>{
-      sec.items.forEach((item,ii)=>{
-        if(state[`${si}-${ii}`].status===2){
-          const memo=state[`${si}-${ii}`].memo;
-          ngList.push(item.l+(memo?' ('+memo+')':''));
+function buildEmbed() {
+  var room    = document.getElementById('roomInput').value || '（未入力）';
+  var staff   = document.getElementById('staffSelect').value || '（未選択）';
+  var checker = document.getElementById('checkerInput').value || '（未入力）';
+  var comment = document.getElementById('commentInput').value || '';
+  var done = doneCount(), ng = ngCount(), total = totalItems();
+  var now = new Date();
+  var dateStr = now.getFullYear() + '/' + (now.getMonth()+1) + '/' + now.getDate() + ' ' + now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+  var color = ng > 0 ? 0xE24B4A : done===total ? 0x1D9E75 : 0x0F6E56;
+  var desc = '✅ **完了：' + done + '/' + total + '項目**';
+  if (ng > 0) {
+    desc += '\n⚠️ **NG：' + ng + '件**\n';
+    SECTIONS.forEach(function(sec, si) {
+      sec.items.forEach(function(item, ii) {
+        if (state[si+'-'+ii].status === 2) {
+          var memo = state[si+'-'+ii].memo;
+          desc += '\n' + sec.icon + ' **' + sec.name + '** No.' + item.n + ' ' + item.l;
+          if (memo) desc += '\n> 📝 ' + memo;
+          desc += '\n';
         }
       });
     });
+  } else {
+    desc += '\n\n問題なし！全項目クリア 🎉';
+  }
+  if (comment) desc += '\n\n💬 **一言：** ' + comment;
+  return {embeds:[{
+    title: '🏠 民泊清掃完了報告',
+    description: desc, color: color,
+    fields: [
+      {name:'📍 物件', value:room, inline:true},
+      {name:'🧹 担当', value:staff, inline:true},
+      {name:'✅ チェック担当', value:checker, inline:true},
+      {name:'🕐 時刻', value:dateStr, inline:true},
+    ],
+    footer: {text:'民泊清掃チェックシステム'}
+  }]};
+}
 
-    // GASに送信
-    const gasData={
-      type:'check_result',
-      staff,
-      date:dateStr,
-      bukken:room,
-      checker,
-      doneCount:done,
-      totalCount:total,
-      ngItems:ngList.join('|'),
-    };
-    await fetch(GAS_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(gasData),
-      mode:'no-cors'
+async function dataUrlToBlob(dataUrl) {
+  var res = await fetch(dataUrl);
+  return await res.blob();
+}
+
+async function sendAll() {
+  var staff = document.getElementById('staffSelect').value;
+  if (!staff) { showToast('❌ 清掃担当者を選択してください', 3000); return; }
+  var btn = document.getElementById('sendBtn');
+  btn.disabled = true; btn.textContent = '送信中...';
+  try {
+    var room    = document.getElementById('roomInput').value || '';
+    var checker = document.getElementById('checkerInput').value || '';
+    var comment = document.getElementById('commentInput').value || '';
+    var done = doneCount(), ng = ngCount(), total = totalItems();
+    var now = new Date();
+    var dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    var ngList = [];
+    SECTIONS.forEach(function(sec, si) {
+      sec.items.forEach(function(item, ii) {
+        if (state[si+'-'+ii].status === 2) {
+          var memo = state[si+'-'+ii].memo;
+          ngList.push(item.l + (memo ? ' (' + memo + ')' : ''));
+        }
+      });
     });
-
-    // Discordにも常に送信
-    const allPhotos=[];
-    SECTIONS.forEach((sec,si)=>{
-      sec.items.forEach((_,ii)=>{
-        state[`${si}-${ii}`].photos.forEach((p)=>{
-          allPhotos.push({...p,label:`${sec.icon}${sec.name} No.${sec.items[ii].n}`});
+    // GASに送信
+    await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        type: 'check_result', staff: staff, date: dateStr,
+        bukken: room, checker: checker,
+        doneCount: done, totalCount: total,
+        ngItems: ngList.join('|'), comment: comment
+      }),
+      mode: 'no-cors'
+    });
+    // Discordにも送信
+    var allPhotos = [];
+    SECTIONS.forEach(function(sec, si) {
+      sec.items.forEach(function(_, ii) {
+        state[si+'-'+ii].photos.forEach(function(p) {
+          allPhotos.push({dataUrl:p.dataUrl, type:p.type, label: sec.icon + sec.name + ' No.' + sec.items[ii].n});
         });
       });
     });
-
-    // テキストをDiscordに送信
-    const embed=buildEmbed();
-    await fetch(DISCORD_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(embed)});
-
-    // 写真があれば続けて送信
-    for(let i=0;i<allPhotos.length;i++){
-      const p=allPhotos[i];
-      const blob=await dataUrlToBlob(p.dataUrl);
-      const ext=p.type.split('/')[1]||'jpg';
-      const fd=new FormData();
-      fd.append('file',blob,`photo_${i+1}.${ext}`);
-      fd.append('payload_json',JSON.stringify({content:`📷 **${p.label}** (${i+1}/${allPhotos.length}枚目)`}));
-      await fetch(DISCORD_WEBHOOK,{method:'POST',body:fd});
+    var embed = buildEmbed();
+    await fetch(WEBHOOK, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(embed)});
+    for (var i = 0; i < allPhotos.length; i++) {
+      var p = allPhotos[i];
+      var blob = await dataUrlToBlob(p.dataUrl);
+      var ext = p.type.split('/')[1] || 'jpg';
+      var fd = new FormData();
+      fd.append('file', blob, 'photo_' + (i+1) + '.' + ext);
+      fd.append('payload_json', JSON.stringify({content: '📷 **' + p.label + '** (' + (i+1) + '/' + allPhotos.length + '枚目)'}));
+      await fetch(WEBHOOK, {method:'POST', body:fd});
     }
-
-    showToast(`✅ 送信完了！勤怠アプリ＋Discord${allPhotos.length>0?' (写真'+allPhotos.length+'枚)':''}に送りました`);
-  }catch(err){
-    showToast('❌ 送信失敗：'+err.message,4000);
-  }finally{
-    btn.disabled=false;
-    btn.innerHTML=discordBtnHTML();
+    showToast('✅ 送信完了！' + (allPhotos.length > 0 ? '（写真' + allPhotos.length + '枚含む）' : ''));
+  } catch(err) {
+    showToast('❌ 送信失敗：' + err.message, 4000);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '送信';
   }
 }
 
-function discordBtnHTML(){
-  return `<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z"/></svg> 送信`;
+
+function updateMemoEl(el) {
+  var si = el.getAttribute('data-si');
+  var ii = el.getAttribute('data-ii');
+  state[si + '-' + ii].memo = el.value;
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
 }
 
+function render() {
+  var content = document.getElementById('content');
+  content.innerHTML = '';
+  SECTIONS.forEach(function(sec, si) {
+    var secDiv = document.createElement('div');
+    secDiv.className = 'section';
 
-function render(){
-  const content=document.getElementById('content');
-  content.innerHTML='';
-  SECTIONS.forEach((sec,si)=>{
-    const div=document.createElement('div');
-    div.className='section';
-    const itemsHTML=sec.items.map((item,ii)=>`
-      <div class="item" id="item-${si}-${ii}" onclick="tap(${si},${ii})">
-        <div class="check-area"><div class="check-circle"></div></div>
-        <div class="item-body">
-          <div class="item-num">No.${item.n}</div>
-          <div class="item-label">${item.l}</div>
-          <div class="item-note">${item.note}</div>
-        </div>
-        <div class="item-actions">
-          <div class="ng-btn" onclick="tapNg(${si},${ii},event)">NG</div>
-          <div class="photo-btn" onclick="event.stopPropagation()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><rect x="3" y="7" width="18" height="14" rx="2"/><circle cx="12" cy="14" r="3"/><path d="M8 7l1.5-3h5L16 7"/></svg>
-            <img src="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:6px;">
-            <span class="photo-count"></span>
-            <input type="file" accept="image/*" multiple onchange="handlePhoto(${si},${ii},this)">
-          </div>
-        </div>
-      </div>
-      <div class="item-extra" id="extra-${si}-${ii}">
-        <textarea class="memo-input" id="memo-${si}-${ii}" placeholder="備考・メモを入力（任意）" rows="1"
-          oninput="updateMemo(${si},${ii},this.value);this.style.height='auto';this.style.height=this.scrollHeight+'px'"
-          onclick="event.stopPropagation()"></textarea>
-        <div class="photo-strip" id="strip-${si}-${ii}"></div>
-      </div>`).join('');
-    div.innerHTML=`
-      <div class="section-header" onclick="toggleSection(${si})">
-        <div class="section-title">${sec.icon} ${sec.name}</div>
-        <span class="section-badge" id="badge-${si}">0/${sec.items.length}</span>
-      </div>
-      <div class="section-body" id="body-${si}">${itemsHTML}</div>`;
-    content.appendChild(div);
+    // Section header
+    var hdr = document.createElement('div');
+    hdr.className = 'section-header';
+    hdr.innerHTML = '<div class="section-title">' + sec.icon + ' ' + sec.name + '</div>' +
+      '<span class="section-badge" id="badge-' + si + '">0/' + sec.items.length + '</span>';
+    hdr.addEventListener('click', function() { toggleSection(si); });
+    secDiv.appendChild(hdr);
+
+    // Section body
+    var body = document.createElement('div');
+    body.className = 'section-body';
+    body.id = 'body-' + si;
+
+    sec.items.forEach(function(item, ii) {
+      var k = si + '-' + ii;
+
+      // Item row
+      var itemEl = document.createElement('div');
+      itemEl.className = 'item';
+      itemEl.id = 'item-' + k;
+      (function(si2, ii2) {
+        itemEl.addEventListener('click', function() { tap(si2, ii2); });
+      })(si, ii);
+
+      // Check circle
+      var checkArea = document.createElement('div');
+      checkArea.className = 'check-area';
+      var circle = document.createElement('div');
+      circle.className = 'check-circle';
+      checkArea.appendChild(circle);
+      itemEl.appendChild(checkArea);
+
+      // Item body text
+      var itemBody = document.createElement('div');
+      itemBody.className = 'item-body';
+      itemBody.innerHTML = '<div class="item-num">No.' + item.n + '</div>' +
+        '<div class="item-label">' + item.l + '</div>' +
+        '<div class="item-note">' + item.note + '</div>';
+      itemEl.appendChild(itemBody);
+
+      // Actions
+      var actions = document.createElement('div');
+      actions.className = 'item-actions';
+
+      var ngBtn = document.createElement('div');
+      ngBtn.className = 'ng-btn';
+      ngBtn.textContent = 'NG';
+      (function(si2, ii2) {
+        ngBtn.addEventListener('click', function(e) { tapNg(si2, ii2, e); });
+      })(si, ii);
+      actions.appendChild(ngBtn);
+
+      var photoBtn = document.createElement('div');
+      photoBtn.className = 'photo-btn';
+      photoBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><rect x="3" y="7" width="18" height="14" rx="2"/><circle cx="12" cy="14" r="3"/><path d="M8 7l1.5-3h5L16 7"/></svg>' +
+        '<img src="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:6px;">' +
+        '<span class="photo-count"></span>';
+      var fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.multiple = true;
+      (function(si2, ii2) {
+        fileInput.addEventListener('change', function() { handlePhoto(si2, ii2, this); });
+      })(si, ii);
+      photoBtn.appendChild(fileInput);
+      photoBtn.addEventListener('click', function(e) { e.stopPropagation(); });
+      actions.appendChild(photoBtn);
+      itemEl.appendChild(actions);
+      body.appendChild(itemEl);
+
+      // Extra area (memo + photos)
+      var extra = document.createElement('div');
+      extra.className = 'item-extra';
+      extra.id = 'extra-' + k;
+
+      var ta = document.createElement('textarea');
+      ta.className = 'memo-input';
+      ta.id = 'memo-' + k;
+      ta.placeholder = '備考・メモ（任意）';
+      ta.rows = 1;
+      (function(si2, ii2, taEl) {
+        taEl.addEventListener('input', function() {
+          state[si2 + '-' + ii2].memo = taEl.value;
+          taEl.style.height = 'auto';
+          taEl.style.height = taEl.scrollHeight + 'px';
+        });
+        taEl.addEventListener('click', function(e) { e.stopPropagation(); });
+      })(si, ii, ta);
+      extra.appendChild(ta);
+
+      var strip = document.createElement('div');
+      strip.className = 'photo-strip';
+      strip.id = 'strip-' + k;
+      extra.appendChild(strip);
+
+      body.appendChild(extra);
+    });
+
+    secDiv.appendChild(body);
+    content.appendChild(secDiv);
   });
   updateProgress();
 }
 
-function toggleSection(si){
-  const b=document.getElementById(`body-${si}`);
-  b.style.display=b.style.display==='none'?'block':'none';
+function toggleSection(si) {
+  var b = document.getElementById('body-' + si);
+  b.style.display = b.style.display === 'none' ? 'block' : 'none';
 }
 
-function confirmReset(){
-  if(confirm('チェック・備考・写真をすべてリセットしますか？')){
-    SECTIONS.forEach((s,si)=>s.items.forEach((_,ii)=>{state[`${si}-${ii}`]={status:0,memo:'',photos:[]}}));
-    document.getElementById('roomInput').value='';
-    document.getElementById('staffInput').value='';
+function confirmReset() {
+  if (confirm('チェック・備考・写真・メッセージをすべてリセットしますか？')) {
+    SECTIONS.forEach(function(s, si) {
+      s.items.forEach(function(_, ii) { state[si+'-'+ii] = {status:0, memo:'', photos:[]}; });
+    });
+    document.getElementById('roomInput').value = '';
+    document.getElementById('checkerInput').value = '';
+    document.getElementById('commentInput').value = '';
+    document.getElementById('staffSelect').value = '';
     render();
   }
 }
 
 render();
+loadStaffList();
 </script>
 </body>
 </html>
