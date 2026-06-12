@@ -1656,7 +1656,7 @@ async function downloadPayslipPDF() {
     const res = await gasGet({ type:'payslip_pdf', staff:currentStaff, month });
     if (res.ok && res.url) {
       hideLoading();
-      window.open(res.url, '_blank');
+      window.location.href = res.url;
     } else {
       hideLoading();
       toast('❌ ' + (res.error || 'PDFの取得に失敗しました'), 4000);
