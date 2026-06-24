@@ -439,7 +439,7 @@ select.form-control { -webkit-appearance: none; }
         <button class="month-nav-btn" onclick="changePayMonth(1)">›</button>
       </div>
       <div class="card"><div class="card-inner">
-        <div class="card-title">給与内訳（概算）</div>
+        <div class="card-title">勤怠サマリー</div>
         <div id="pay-breakdown"></div>
       </div></div>
       <div id="pay-total-block"></div>
@@ -1698,43 +1698,43 @@ function buildPayView(kintai) {
   }
   kintai = kintai.map(r => ({ ...r, kind: r.kind || r.type, time: formatTime(r.time) }));
 
-  const staffInfo = staffList.find(s => s.name === currentStaff) || { wage: 1100, transportType: '時給' };
-  const isFixed = String(staffInfo.transportType) === '固定給';
-  const wage = parseFloat(staffInfo.wage) || 1100;
-
   let totalMins = 0;
   const dayGroups = {};
-  kintai.forEach(r => { if (!dayGroups[r.date]) dayGroups[r.date]={}; dayGroups[r.date][r.kind]=r.time; });
-  Object.values(dayGroups).forEach(d => {
-    if (d['出勤'] && d['退勤']) {
-      const [ih,im] = d['出勤'].split(':').map(Number);
-      const [oh,om] = d['退勤'].split(':').map(Number);
-      totalMins += (oh*60+om) - (ih*60+im);
+  kintai.forEach(r => {
+    if (!dayGroups[r.date]) dayGroups[r.date] = { in: null, out: null, kyukei: 0 };
+    if (r.kind === '出勤') dayGroups[r.date].in  = r.time;
+    if (r.kind === '退勤') {
+      dayGroups[r.date].out    = r.time;
+      dayGroups[r.date].kyukei += parseFloat(r.kyukei) || 0;
     }
   });
+  Object.values(dayGroups).forEach(d => {
+    if (!d.in || !d.out) return;
+    const [ih, im] = d.in.split(':').map(Number);
+    const [oh, om] = d.out.split(':').map(Number);
+    const worked = (oh * 60 + om) - (ih * 60 + im) - (d.kyukei || 0);
+    if (worked > 0) totalMins += worked;
+  });
 
-  const hours = totalMins / 60;
-  const wageTotal = isFixed ? wage : Math.round(hours * wage);
-  const transport = kintai.reduce((s,r) => s+(parseFloat(r.transport)||0), 0);
-  const parking   = kintai.reduce((s,r) => s+(parseFloat(r.parking)||0), 0);
-  const bihin     = kintai.reduce((s,r) => s+(parseFloat(r.bihin)||0), 0);
-  const distance  = kintai.reduce((s,r) => s+(parseFloat(r.distance)||0), 0);
-  const grand     = wageTotal + transport + parking + bihin;
+  const workDays = Object.values(dayGroups).filter(d => d.in).length;
+  const h = Math.floor(totalMins / 60);
+  const m = Math.round(totalMins % 60);
+  const hhmm = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
 
-  document.getElementById('pay-breakdown').innerHTML = `
+  const hasData = workDays > 0;
+
+  document.getElementById('pay-breakdown').innerHTML = hasData ? `
     <div class="pay-row">
-      <div><div class="pay-lbl">${isFixed ? '固定給' : '基本給'}</div>
-      <div class="pay-sub">${isFixed ? '月額固定' : `${hours.toFixed(2)}h × ¥${wage.toLocaleString()}`}</div></div>
-      <div class="pay-amt">¥${wageTotal.toLocaleString()}</div>
+      <div class="pay-lbl">稼働日数</div>
+      <div class="pay-amt">${workDays} 日</div>
     </div>
-    <div class="pay-row"><div><div class="pay-lbl">交通費</div><div class="pay-sub">${kintai.filter(r=>r.transport>0).length}日分</div></div><div class="pay-amt">¥${transport.toLocaleString()}</div></div>
-    <div class="pay-row"><div><div class="pay-lbl">パーキング代</div></div><div class="pay-amt">¥${parking.toLocaleString()}</div></div>
-    ${distance>0?`<div class="pay-row"><div><div class="pay-lbl">走行距離</div></div><div class="pay-amt" style="color:var(--muted)">${distance.toFixed(1)}km</div></div>`:''}
-    ${bihin>0?`<div class="pay-row"><div><div class="pay-lbl">備品購入代</div></div><div class="pay-amt">¥${bihin.toLocaleString()}</div></div>`:''}`;
+    <div class="pay-row">
+      <div class="pay-lbl">稼働時間</div>
+      <div class="pay-amt">${hhmm} h</div>
+    </div>` : '';
 
-  document.getElementById('pay-total-block').innerHTML = grand > 0
-    ? `<div class="pay-total"><div class="pay-total-lbl">支給合計（概算）</div><div class="pay-total-amt">¥${grand.toLocaleString()}</div></div>
-    <button onclick="downloadPayslipPDF()" style="width:100%;margin-top:12px;padding:14px;background:#34c759;color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:700;font-family:var(--sans);cursor:pointer;">📄 給与明細PDFをダウンロード</button>`
+  document.getElementById('pay-total-block').innerHTML = hasData
+    ? `<button onclick="downloadPayslipPDF()" style="width:100%;margin-top:12px;padding:14px;background:#34c759;color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:700;font-family:var(--sans);cursor:pointer;">📄 給与明細PDFをダウンロード</button>`
     : `<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">この月のデータがありません</div>`;
 }
 
