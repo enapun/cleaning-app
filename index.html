@@ -1789,7 +1789,22 @@ function openModal(id) {
     const memoEl = document.getElementById('kanryo-hoshu-memo');
     if (memoEl) memoEl.value = '';
   }
-  document.getElementById(id).classList.add('open');
+  // 退勤モーダルを開くとき、休憩開始・終了の記録から休憩時間を自動計算
+  if (id === 'm-taikkin') {
+    const kyukeiEl = document.getElementById('taikkin-kyukei');
+    if (kyukeiEl) {
+      let totalBreakMins = 0;
+      const starts = todayLog.filter(l => l.kind === '休憩開始').map(l => l.time);
+      const ends   = todayLog.filter(l => l.kind === '休憩終了').map(l => l.time);
+      const pairs  = Math.min(starts.length, ends.length);
+      for (let i = 0; i < pairs; i++) {
+        const [sh, sm] = starts[i].split(':').map(Number);
+        const [eh, em] = ends[i].split(':').map(Number);
+        totalBreakMins += (eh * 60 + em) - (sh * 60 + sm);
+      }
+      if (totalBreakMins > 0) kyukeiEl.value = totalBreakMins;
+    }
+  }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-bg').forEach(el => el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); }));
