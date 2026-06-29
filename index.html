@@ -1805,6 +1805,7 @@ function openModal(id) {
       if (totalBreakMins > 0) kyukeiEl.value = totalBreakMins;
     }
   }
+  document.getElementById(id).classList.add('open');
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-bg').forEach(el => el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); }));
