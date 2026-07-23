@@ -992,6 +992,9 @@ const HOSHU_ITEMS = [
   'ブラシ','コロコロ本体','単三電池','単四電池','電球','その他'
 ];
 
+// ｸﾘｰﾅｰｽﾞﾊｲ専用 補充選択肢（Blues／OPT）
+const CLEANERS_HIGH_HOSHU_ITEMS = ['シャンプー','コンディショナー','ボディソープ','補充なし','その他'];
+
 // ｸﾘｰﾅｰｽﾞﾊｲ専用物件リスト
 const CLEANERS_HIGH_BUKKEN = [
   'Blues２F','Blues３F','Blues４F','Blues５F','Blues６F','Blues７F','Blues８F','Blues９F',
@@ -1018,16 +1021,18 @@ function populateBukkenSelects() {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '<option value="">選択してください</option>' + opts;
   });
-  // 補充チェックボックス（清掃完了モーダル）
-  renderHoshuChecks('kanryo-hoshu-checks');
+  // 補充チェックボックス（清掃完了モーダル）※ｸﾘｰﾅｰｽﾞﾊｲはBlues/OPT専用の5項目
+  const isCleanersHighInit = ['ｸﾘｰﾅｰｽﾞﾊｲ','クリーナーズハイ','クリIナIズハイ'].includes(currentStaff);
+  renderHoshuChecks('kanryo-hoshu-checks', isCleanersHighInit ? CLEANERS_HIGH_HOSHU_ITEMS : HOSHU_ITEMS);
   // 補充チェックボックス（退勤モーダル）
   renderHoshuChecks('hoshu-checks');
 }
 
-function renderHoshuChecks(containerId) {
+function renderHoshuChecks(containerId, items) {
   const el = document.getElementById(containerId);
   if (!el) return;
-  el.innerHTML = HOSHU_ITEMS.map(item => `
+  const list = items || HOSHU_ITEMS;
+  el.innerHTML = list.map(item => `
     <label class="hoshu-item" onclick="toggleHoshu(this)">
       <div class="hoshu-check">✓</div>
       <span>${item}</span>
@@ -1222,12 +1227,9 @@ async function submitKanryo() {
   const bukken = document.getElementById('kanryo-bukken').value;
   const time   = document.getElementById('kanryo-time').value || nowTime();
   const memo   = document.getElementById('kanryo-memo').value;
-  const isCleanersHigh = ['ｸﾘｰﾅｰｽﾞﾊｲ','クリーナーズハイ','クリIナIズハイ'].includes(currentStaff);
-  const hoshu  = isCleanersHigh
-    ? (document.getElementById('kanryo-hoshu-memo').value || '')
-    : getCheckedHoshu('kanryo-hoshu-checks');
+  const hoshu  = getCheckedHoshu('kanryo-hoshu-checks');
   if (!bukken) { toast('物件を選択してください'); return; }
-  if (!isCleanersHigh && !hoshu) { toast('補充項目を選択してください（「補充なし」でも可）'); return; }
+  if (!hoshu) { toast('補充項目を選択してください（「補充なし」でも可）'); return; }
   showLoading('清掃完了を記録中...');
   try {
     const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'清掃完了', time, bukken, hoshu, memo });
@@ -1777,13 +1779,15 @@ function openModal(id) {
     document.getElementById('shift-upload-result').style.display = 'none';
     document.getElementById('shift-upload-zone').style.display = 'block';
   }
-  // ｸﾘｰﾅｰｽﾞﾊｲの場合、清掃完了モーダルの補充欄を切り替え
+  // ｸﾘｰﾅｰｽﾞﾊｲの場合、清掃完了モーダルの補充欄は専用の選択肢（複数選択）を表示
   if (id === 'm-kanryo') {
     const isCleanersHigh = ['ｸﾘｰﾅｰｽﾞﾊｲ','クリーナーズハイ','クリIナIズハイ'].includes(currentStaff);
     const hoshuBlock = document.getElementById('kanryo-hoshu-block');
     const hoshuMemoBlock = document.getElementById('kanryo-hoshu-memo-block');
-    if (hoshuBlock) hoshuBlock.style.display = isCleanersHigh ? 'none' : 'block';
-    if (hoshuMemoBlock) hoshuMemoBlock.style.display = isCleanersHigh ? 'block' : 'none';
+    if (hoshuBlock) hoshuBlock.style.display = 'block';
+    if (hoshuMemoBlock) hoshuMemoBlock.style.display = 'none';
+    // ｸﾘｰﾅｰｽﾞﾊｲはBlues／OPT専用の5項目、それ以外は通常の備品リストを表示
+    renderHoshuChecks('kanryo-hoshu-checks', isCleanersHigh ? CLEANERS_HIGH_HOSHU_ITEMS : HOSHU_ITEMS);
     // チェックをリセット
     document.querySelectorAll('#kanryo-hoshu-checks .hoshu-item').forEach(i => i.classList.remove('checked'));
     const memoEl = document.getElementById('kanryo-hoshu-memo');
