@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>写真送信 速度テスト</title>
+<style>
+  :root{--bg:#f5f5f3;--card:#fff;--tx:#1f1f1d;--sub:#6b6a66;--bd:#e2e0da;--ac:#1d6fd6;--ok:#2f7d32;--ng:#c62828}
+  @media (prefers-color-scheme:dark){:root{--bg:#1b1b1a;--card:#262624;--tx:#eceae4;--sub:#a3a19b;--bd:#3a3936;--ac:#5aa0f2;--ok:#7cc47f;--ng:#ef8a8a}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:15px;line-height:1.6}
+  main{max-width:520px;margin:0 auto;padding:16px}
+  h1{font-size:19px;font-weight:600;margin:4px 0 12px}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+  label{display:block;font-size:12px;color:var(--sub);margin-bottom:4px}
+  input,select{width:100%;font-size:15px;padding:9px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx)}
+  .row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+  button{width:100%;font-size:16px;padding:12px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);margin-top:10px}
+  button.primary{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+  button:disabled{opacity:.5}
+  .sub{font-size:13px;color:var(--sub);margin-top:6px}
+  .bar{height:8px;background:var(--bd);border-radius:4px;overflow:hidden;margin-top:14px}
+  .bar div{height:100%;width:0;background:var(--ac);transition:width .2s}
+  #st{font-size:14px;margin-top:8px;min-height:22px}
+  .ng{color:var(--ng)} .ok{color:var(--ok)}
+  pre{white-space:pre-wrap;font-size:13px;margin:0;font-family:ui-monospace,Menlo,monospace}
+  a{color:var(--ac)}
+</style>
+</head>
+<body>
+<main>
+  <h1>写真送信 速度テスト</h1>
+
+  <section class="card">
+    <label for="url">GASのURL（入力済み・触らなくてOK）</label>
+    <input id="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+    <div class="row">
+      <div><label for="px">長辺(px)</label>
+        <select id="px"><option>1280</option><option selected>1600</option><option>2048</option></select></div>
+      <div><label for="batch">1回の枚数</label>
+        <select id="batch"><option>3</option><option selected>5</option><option>8</option></select></div>
+      <div><label for="conc">同時送信</label>
+        <select id="conc"><option>1</option><option>2</option><option selected>3</option><option>4</option></select></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <input type="file" id="files" accept="image/*" multiple hidden>
+    <button id="pick">写真を選ぶ</button>
+    <div class="sub" id="sel">未選択</div>
+    <button id="go" class="primary">送信テスト開始</button>
+    <div class="bar"><div id="fill"></div></div>
+    <div id="st"></div>
+    <div class="sub">送信中は画面を閉じたり、別のアプリに切り替えたりしないでください。</div>
+  </section>
+
+  <section class="card" id="resBox" hidden>
+    <pre id="res"></pre>
+    <button id="copy">結果をコピー</button>
+    <div class="sub" id="link"></div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let files = [];
+let running = false;
+
+const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwrnnrfyqQRdfoNHsZo44KBepaBP3NYGLXS8WTgGoYRZgKb4OcFSZ87sQhLCxbvBWgV/exec';
+$('url').value = DEFAULT_GAS_URL;
+try { const saved = localStorage.getItem('photoTestGasUrl'); if (saved) $('url').value = saved; } catch (e) {}
+
+$('pick').onclick = () => $('files').click();
+$('files').onchange = e => {
+  files = Array.from(e.target.files);
+  const mb = files.reduce((a, f) => a + f.size, 0) / 1048576;
+  $('sel').textContent = files.length + '枚（元サイズ合計 ' + mb.toFixed(1) + 'MB）';
+  setStatus('', '');
+};
+
+function setStatus(text, cls) {
+  $('st').textContent = text;
+  $('st').className = cls || '';
+}
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const u = URL.createObjectURL(file);
+    img.onload = () => { URL.revokeObjectURL(u); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(u); reject(new Error('画像を読めません: ' + file.name)); };
+    img.src = u;
+  });
+}
+
+// 縮小してJPEG化 → base64
+async function resize(file, max) {
+  const img = await loadImage(file);
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const s = Math.min(1, max / Math.max(w, h));
+  const c = document.createElement('canvas');
+  c.width = Math.round(w * s);
+  c.height = Math.round(h * s);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.8));
+  c.width = c.height = 0; // メモリ解放
+  if (!blob) throw new Error('変換に失敗: ' + file.name);
+  const data = await new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result).split(',')[1]);
+    fr.onerror = () => reject(new Error('読み込みに失敗: ' + file.name));
+    fr.readAsDataURL(blob);
+  });
+  return { data, size: blob.size };
+}
+
+async function post(url, body) {
+  // text/plain で送ると事前確認(CORS preflight)が発生せず速い
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'GASエラー');
+  return j;
+}
+
+$('go').onclick = async () => {
+  if (running) return;
+  const url = $('url').value.trim();
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url)) {
+    setStatus('GASのURLを確認してください（…/exec で終わるURL）', 'ng'); return;
+  }
+  if (!files.length) { setStatus('写真を選んでください', 'ng'); return; }
+  try { localStorage.setItem('photoTestGasUrl', url); } catch (e) {}
+
+  const max = +$('px').value, B = +$('batch').value, C = +$('conc').value;
+  running = true;
+  $('go').disabled = true; $('pick').disabled = true;
+  $('resBox').hidden = true;
+  $('fill').style.width = '0';
+
+  let wakeLock = null;
+  try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+
+  const t0 = performance.now();
+  const timer = setInterval(() => {
+    const sec = ((performance.now() - t0) / 1000).toFixed(0);
+    $('st').dataset.sec = sec;
+    if (running && $('st').dataset.msg) setStatus($('st').dataset.msg + '（' + sec + '秒）', '');
+  }, 500);
+  const msg = m => { $('st').dataset.msg = m; setStatus(m + '（' + ($('st').dataset.sec || 0) + '秒）', ''); };
+
+  msg('準備中');
+  let start;
+  try {
+    start = await post(url, { action: 'start' });
+  } catch (e) {
+    clearInterval(timer); running = false;
+    $('go').disabled = false; $('pick').disabled = false;
+    setStatus('GASに接続できません：' + e.message, 'ng');
+    if (wakeLock) wakeLock.release().catch(() => {});
+    return;
+  }
+  const startMs = performance.now() - t0;
+
+  const batches = [];
+  for (let i = 0; i < files.length; i += B) {
+    batches.push(files.slice(i, i + B).map((f, k) => ({ f, idx: i + k + 1 })));
+  }
+
+  let next = 0, done = 0, failed = 0, retries = 0, resizeMs = 0, outBytes = 0;
+  const gasMs = [], reqMs = [], errors = [];
+
+  async function worker() {
+    while (next < batches.length) {
+      const b = batches[next++];
+      const items = [];
+      for (const it of b) {
+        const r0 = performance.now();
+        try {
+          const r = await resize(it.f, max);
+          items.push({ name: String(it.idx).padStart(3, '0') + '.jpg', data: r.data });
+          outBytes += r.size;
+        } catch (e) {
+          failed++; errors.push(e.message);
+        }
+        resizeMs += performance.now() - r0;
+      }
+      if (!items.length) continue;
+
+      let ok = false;
+      for (let a = 0; a < 3 && !ok; a++) {
+        if (a) { retries++; await sleep(1000 * a); }
+        const q0 = performance.now();
+        try {
+          const j = await post(url, { action: 'upload', folderId: start.folderId, files: items });
+          reqMs.push(performance.now() - q0);
+          gasMs.push(j.gasMs);
+          ok = true;
+        } catch (e) {
+          if (a === 2) errors.push(e.message);
+        }
+      }
+      if (ok) done += items.length; else failed += items.length;
+      $('fill').style.width = Math.round((done + failed) / files.length * 100) + '%';
+      msg('送信中 ' + (done + failed) + '/' + files.length + '枚');
+    }
+  }
+
+  msg('送信中 0/' + files.length + '枚');
+  await Promise.all(Array.from({ length: Math.min(C, batches.length) }, worker));
+
+  const totalSec = (performance.now() - t0) / 1000;
+  clearInterval(timer);
+  running = false;
+  $('go').disabled = false; $('pick').disabled = false;
+  if (wakeLock) wakeLock.release().catch(() => {});
+
+  const avg = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : 0;
+  const inMB = files.reduce((a, f) => a + f.size, 0) / 1048576;
+  const conn = navigator.connection && navigator.connection.effectiveType ? navigator.connection.effectiveType : '不明';
+  const ua = /iPhone|iPad/.test(navigator.userAgent) ? 'iPhone/iPad' : (/Android/.test(navigator.userAgent) ? 'Android' : 'PC');
+
+  setStatus(failed ? '完了（失敗あり）' : '完了', failed ? 'ng' : 'ok');
+  $('res').textContent = [
+    '【写真送信 速度テスト結果】',
+    '合計時間：' + totalSec.toFixed(1) + '秒',
+    '成功：' + done + '枚 / 失敗：' + failed + '枚 / 再送：' + retries + '回',
+    '元サイズ：' + inMB.toFixed(1) + 'MB → 縮小後：' + (outBytes / 1048576).toFixed(1) + 'MB',
+    '1枚あたり：' + (totalSec / files.length).toFixed(2) + '秒',
+    '縮小処理（合計）：' + (resizeMs / 1000).toFixed(1) + '秒',
+    '準備（GAS初回）：' + (startMs / 1000).toFixed(1) + '秒',
+    '1回の送信 平均：' + (avg(reqMs) / 1000).toFixed(1) + '秒（うちGAS処理 ' + (avg(gasMs) / 1000).toFixed(1) + '秒）',
+    '設定：長辺' + max + 'px / ' + B + '枚ずつ / 同時' + C,
+    '端末：' + ua + ' / 回線：' + conn,
+    errors.length ? 'エラー：' + errors.slice(0, 3).join(' | ') : ''
+  ].filter(Boolean).join('\n');
+  $('link').innerHTML = '保存先：<a href="' + start.folderUrl + '" target="_blank" rel="noopener">ドライブのフォルダを開く</a>';
+  $('resBox').hidden = false;
+  $('resBox').scrollIntoView({ behavior: 'smooth' });
+};
+
+$('copy').onclick = async () => {
+  try {
+    await navigator.clipboard.writeText($('res').textContent);
+    $('copy').textContent = 'コピーしました';
+  } catch (e) {
+    $('copy').textContent = 'コピーできません（長押しで選択してください）';
+  }
+  setTimeout(() => { $('copy').textContent = '結果をコピー'; }, 2000);
+};
+</script>
+</body>
+</html>
