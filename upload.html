@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>写真アップ</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #fff; --text: #1d2330; --sub: #6b7280; --line: #e3e6eb;
+    --accent: #2563eb; --accent-text: #fff; --ok: #15803d; --ng: #b91c1c; --soft: #eef3ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14161b; --card: #1e2128; --text: #e8eaee; --sub: #9aa1ad; --line: #30343d;
+      --accent: #5b8cff; --accent-text: #0b1020; --ok: #4ade80; --ng: #f87171; --soft: #222a3d; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif; }
+  main { max-width: 520px; margin: 0 auto; padding: 16px 16px 48px; }
+  h1 { font-size: 20px; margin: 8px 0 4px; }
+  .lead { color: var(--sub); font-size: 13px; margin: 0 0 16px; line-height: 1.6; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  label { display: block; font-size: 13px; font-weight: 700; margin: 0 0 6px; }
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  input[type=text], input[type=date], select {
+    width: 100%; font-size: 16px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--card); color: var(--text); }
+  .owner { font-size: 12px; color: var(--sub); margin-top: 6px; min-height: 1em; }
+  .pick { display: block; text-align: center; padding: 22px 12px; border: 2px dashed var(--line); border-radius: 12px;
+    color: var(--sub); cursor: pointer; font-size: 15px; }
+  .pick b { color: var(--text); }
+  #files { display: none; }
+  button { width: 100%; font-size: 16px; font-weight: 700; padding: 14px; border: 0; border-radius: 12px;
+    background: var(--accent); color: var(--accent-text); cursor: pointer; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.sub { background: var(--soft); color: var(--accent); }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  .bar { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 10px 0 6px; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  .msg { font-size: 14px; line-height: 1.6; }
+  .ok { color: var(--ok); } .ng { color: var(--ng); }
+  .url { word-break: break-all; font-size: 13px; background: var(--soft); padding: 10px; border-radius: 8px; margin: 8px 0; }
+  .hist { list-style: none; padding: 0; margin: 0; }
+  .hist li { border-top: 1px solid var(--line); padding: 10px 0; font-size: 13px; }
+  .hist li:first-child { border-top: 0; }
+  .hist a { color: var(--accent); }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>📷 写真アップ（後から追加用）</h1>
+  <p class="lead">研修・リネンのみ・未完成などで、あとから写真を追加するときに使います。勤怠アプリと同じフォルダに入ります。</p>
+
+  <div class="card">
+    <div class="field">
+      <label for="date">清掃日</label>
+      <input type="date" id="date">
+    </div>
+    <div class="field">
+      <label for="bukken">物件</label>
+      <input type="text" id="bukken" list="bukken-list" placeholder="読み込み中…" autocomplete="off" disabled>
+      <datalist id="bukken-list"></datalist>
+      <div class="owner" id="owner"></div>
+    </div>
+    <div class="field">
+      <label for="staff">名前</label>
+      <input type="text" id="staff" placeholder="例）大倉">
+    </div>
+    <div class="field">
+      <label class="pick" for="files" id="pick-label"><b>写真を選ぶ</b><br>（複数まとめて選べます）</label>
+      <input type="file" id="files" accept="image/*" multiple>
+    </div>
+    <button id="go" disabled>アップする</button>
+  </div>
+
+  <div class="card hidden" id="progress">
+    <div class="msg" id="pmsg"></div>
+    <div class="bar"><i id="pbar"></i></div>
+    <div id="result" class="hidden">
+      <div class="url" id="rurl"></div>
+      <div class="row">
+        <button class="sub" id="copy">URLをコピー</button>
+        <button class="sub" id="open">フォルダを開く</button>
+      </div>
+      <div style="margin-top:8px" class="hidden" id="retry-wrap"><button id="retry">失敗した写真を再送</button></div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="hist-card">
+    <label>今回アップした分</label>
+    <ul class="hist" id="hist"></ul>
+  </div>
+</main>
+
+<script>
+const PHOTO_GAS_URL = 'https://script.google.com/macros/s/AKfycbwrnnrfyqQRdfoNHsZo44KBepaBP3NYGLXS8WTgGoYRZgKb4OcFSZ87sQhLCxbvBWgV/exec';
+const PHOTO_MAX_PX = 1600, PHOTO_BATCH = 10, PHOTO_CONC = 3;
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+let props = [];          // [{name, owner}]
+let files = [];
+let failedFiles = [];
+let lastUrl = '';
+let busy = false;
+
+function todayJst() {
+  const d = new Date(Date.now() + (9 * 60 + new Date().getTimezoneOffset()) * 60000);
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+function lsGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+async function post(body) {
+  const r = await fetch(PHOTO_GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'エラー');
+  return j;
+}
+async function retryCall(fn) {
+  let last;
+  for (let a = 0; a < 3; a++) {
+    if (a) await new Promise(r => setTimeout(r, 1000 * a));
+    try { return await fn(); } catch (e) { last = e; }
+  }
+  throw last;
+}
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const u = URL.createObjectURL(file);
+    img.onload = () => { URL.revokeObjectURL(u); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(u); reject(new Error('画像を読めません')); };
+    img.src = u;
+  });
+}
+async function resize(file) {
+  const img = await loadImage(file);
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const sc = Math.min(1, PHOTO_MAX_PX / Math.max(w, h));
+  const c = document.createElement('canvas');
+  c.width = Math.round(w * sc); c.height = Math.round(h * sc);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.8));
+  c.width = c.height = 0;
+  if (!blob) throw new Error('変換に失敗しました');
+  return blob;
+}
+async function put(url, blob) {
+  const r = await fetch(url, { method: 'PUT', body: blob });
+  if (r.status !== 200 && r.status !== 201) throw new Error('HTTP ' + r.status);
+}
+
+function selectedProp() {
+  const v = $('bukken').value.normalize('NFKC').replace(/\s+/g, ' ').trim();
+  return props.find(p => p.name === v) || null;
+}
+function refresh() {
+  const p = selectedProp();
+  $('owner').textContent = $('bukken').value ? (p ? 'オーナー：' + p.owner : '⚠ 一覧にない物件名です（一覧から選んでください）') : '';
+  $('owner').className = 'owner' + (p || !$('bukken').value ? '' : ' ng');
+  $('pick-label').innerHTML = files.length ? '<b>' + files.length + '枚 選択中</b><br>（押すと選び直せます）' : '<b>写真を選ぶ</b><br>（複数まとめて選べます）';
+  $('go').disabled = busy || !p || !files.length || !$('date').value || !$('staff').value.trim();
+}
+
+async function upload(list) {
+  const p = selectedProp();
+  const date = $('date').value;
+  const staff = $('staff').value.trim();
+  busy = true; refresh();
+  $('progress').classList.remove('hidden');
+  $('result').classList.add('hidden');
+  let done = 0, failed = 0;
+  const total = list.length;
+  const fails = [];
+  const show = () => {
+    $('pmsg').textContent = `${p.name}：${done} / ${total} 枚アップ中…` + (failed ? `（失敗 ${failed}）` : '');
+    $('pbar').style.width = Math.round((done + failed) / total * 100) + '%';
+  };
+  show();
+  let wakeLock = null;
+  try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+  const n = new Date();
+  const prefix = p.name.normalize('NFKC').replace(/[\\/:*?"<>|\s]+/g, '') + '_' + pad(n.getHours()) + pad(n.getMinutes()) + pad(n.getSeconds());
+  let prep = null;
+  try {
+    prep = await retryCall(() => post({ action: 'prepare', bukken: p.name, date }));
+    const batches = [];
+    for (let i = 0; i < list.length; i += PHOTO_BATCH) batches.push(list.slice(i, i + PHOTO_BATCH).map((f, k) => ({ f, idx: i + k + 1 })));
+    let next = 0;
+    const worker = async () => {
+      while (next < batches.length) {
+        const b = batches[next++];
+        const items = [];
+        for (const it of b) {
+          try { items.push({ f: it.f, name: prefix + '_' + String(it.idx).padStart(3, '0') + '.jpg', blob: await resize(it.f) }); }
+          catch (e) { fails.push(it.f); failed++; show(); }
+        }
+        if (!items.length) continue;
+        let urls;
+        try {
+          const j = await retryCall(() => post({ action: 'sessions', origin: location.origin, folderId: prep.folderId, files: items.map(x => ({ name: x.name, size: x.blob.size })) }));
+          urls = j.urls;
+        } catch (e) { items.forEach(x => fails.push(x.f)); failed += items.length; show(); continue; }
+        await Promise.all(items.map(async (x, i) => {
+          try { await retryCall(() => put(urls[i], x.blob)); done++; }
+          catch (e) { fails.push(x.f); failed++; }
+          show();
+        }));
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(PHOTO_CONC, batches.length) }, worker));
+  } catch (e) {
+    list.forEach(f => { if (!fails.includes(f)) fails.push(f); });
+    failed = total - done;
+    $('pmsg').innerHTML = '<span class="ng">準備に失敗しました：' + String(e.message || e) + '</span>';
+  }
+  if (wakeLock) wakeLock.release().catch(() => {});
+  failedFiles = fails;
+  busy = false;
+  if (done > 0 && prep) {
+    lastUrl = prep.folderUrl;
+    post({ action: 'finish', staff: staff + '（後から追加）', bukken: p.name, date, count: done, failed: total - done, reason: '', folderUrl: lastUrl }).catch(() => {});
+    $('pmsg').innerHTML = (total - done)
+      ? `<span class="ng">${done}枚アップ、${total - done}枚 送れませんでした。</span>`
+      : `<span class="ok">✅ ${p.name}（${date}）に ${done}枚アップしました。</span>`;
+    $('rurl').textContent = lastUrl;
+    $('result').classList.remove('hidden');
+    const li = document.createElement('li');
+    li.innerHTML = `${date}　${p.name}　${done}枚<br><a href="${lastUrl}" target="_blank" rel="noopener">${lastUrl}</a>`;
+    $('hist').prepend(li);
+    $('hist-card').classList.remove('hidden');
+    files = []; $('files').value = '';
+  } else if (prep) {
+    $('pmsg').innerHTML = '<span class="ng">写真を送れませんでした。電波の良い所で「失敗した写真を再送」を押してください。</span>';
+    $('result').classList.remove('hidden');
+    $('rurl').textContent = prep.folderUrl; lastUrl = prep.folderUrl;
+  }
+  $('retry-wrap').classList.toggle('hidden', !failedFiles.length);
+  $('pbar').style.width = '100%';
+  refresh();
+}
+
+$('date').value = todayJst();
+$('staff').value = lsGet('upload_staff');
+['input', 'change'].forEach(ev => {
+  $('bukken').addEventListener(ev, refresh);
+  $('date').addEventListener(ev, refresh);
+  $('staff').addEventListener(ev, () => { lsSet('upload_staff', $('staff').value.trim()); refresh(); });
+});
+$('files').addEventListener('change', e => { files = Array.from(e.target.files || []); refresh(); });
+$('go').addEventListener('click', () => { if (files.length) upload(files); });
+$('retry').addEventListener('click', () => { if (failedFiles.length) upload(failedFiles.slice()); });
+$('copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(lastUrl); $('copy').textContent = 'コピーしました'; }
+  catch (e) { prompt('このURLをコピーしてください', lastUrl); }
+  setTimeout(() => { $('copy').textContent = 'URLをコピー'; }, 2000);
+});
+$('open').addEventListener('click', () => { if (lastUrl) window.open(lastUrl, '_blank', 'noopener'); });
+window.addEventListener('beforeunload', e => { if (busy) { e.preventDefault(); e.returnValue = ''; } });
+
+(async () => {
+  try {
+    const j = await retryCall(() => post({ action: 'props' }));
+    props = j.props.sort((a, b) => (a.owner + a.name).localeCompare(b.owner + b.name, 'ja'));
+    $('bukken-list').innerHTML = props.map(p => `<option value="${p.name.replace(/"/g, '&quot;')}">${p.owner}</option>`).join('');
+    $('bukken').disabled = false;
+    $('bukken').placeholder = '物件名を入力して選ぶ';
+  } catch (e) {
+    $('bukken').placeholder = '物件一覧を読めませんでした（再読み込みしてください）';
+  }
+  refresh();
+})();
+</script>
+</body>
+</html>
