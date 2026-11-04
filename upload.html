@@ -61,8 +61,8 @@
     </div>
     <div class="field">
       <label for="bukken">物件</label>
-      <input type="text" id="bukken" list="bukken-list" placeholder="読み込み中…" autocomplete="off" disabled>
-      <datalist id="bukken-list"></datalist>
+      <input type="text" id="bukken-filter" placeholder="🔍 物件名で絞り込み（任意）" autocomplete="off" style="margin-bottom:8px">
+      <select id="bukken" disabled><option value="">読み込み中…</option></select>
       <div class="owner" id="owner"></div>
     </div>
     <div class="field">
@@ -154,14 +154,26 @@ async function put(url, blob) {
   if (r.status !== 200 && r.status !== 201) throw new Error('HTTP ' + r.status);
 }
 
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function renderOptions() {
+  const q = $('bukken-filter').value.normalize('NFKC').toLowerCase().trim();
+  const cur = $('bukken').value;
+  const list = props.filter(p => !q || (p.name + ' ' + p.owner).normalize('NFKC').toLowerCase().includes(q));
+  const groups = {};
+  list.forEach(p => { (groups[p.owner] = groups[p.owner] || []).push(p); });
+  $('bukken').innerHTML = `<option value="">${list.length ? '物件を選んでください（' + list.length + '件）' : '該当する物件がありません'}</option>` +
+    Object.keys(groups).map(o => `<optgroup label="${esc(o)}">${groups[o].map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('')}</optgroup>`).join('');
+  if (cur && list.some(p => p.name === cur)) $('bukken').value = cur;
+  else if (list.length === 1) $('bukken').value = list[0].name;
+  refresh();
+}
 function selectedProp() {
   const v = $('bukken').value.normalize('NFKC').replace(/\s+/g, ' ').trim();
   return props.find(p => p.name === v) || null;
 }
 function refresh() {
   const p = selectedProp();
-  $('owner').textContent = $('bukken').value ? (p ? 'オーナー：' + p.owner : '⚠ 一覧にない物件名です（一覧から選んでください）') : '';
-  $('owner').className = 'owner' + (p || !$('bukken').value ? '' : ' ng');
+  if (props.length) { $('owner').textContent = p ? 'オーナー：' + p.owner : ''; $('owner').className = 'owner'; }
   $('pick-label').innerHTML = files.length ? '<b>' + files.length + '枚 選択中</b><br>（押すと選び直せます）' : '<b>写真を選ぶ</b><br>（複数まとめて選べます）';
   $('go').disabled = busy || !p || !files.length || !$('date').value || !$('staff').value.trim();
 }
@@ -251,6 +263,7 @@ $('staff').value = lsGet('upload_staff');
   $('date').addEventListener(ev, refresh);
   $('staff').addEventListener(ev, () => { lsSet('upload_staff', $('staff').value.trim()); refresh(); });
 });
+$('bukken-filter').addEventListener('input', renderOptions);
 $('files').addEventListener('change', e => { files = Array.from(e.target.files || []); refresh(); });
 $('go').addEventListener('click', () => { if (files.length) upload(files); });
 $('retry').addEventListener('click', () => { if (failedFiles.length) upload(failedFiles.slice()); });
@@ -265,12 +278,15 @@ window.addEventListener('beforeunload', e => { if (busy) { e.preventDefault(); e
 (async () => {
   try {
     const j = await retryCall(() => post({ action: 'props' }));
+    if (!Array.isArray(j.props)) throw new Error('写真GASが古い版です（新バージョンでデプロイしてください）');
     props = j.props.sort((a, b) => (a.owner + a.name).localeCompare(b.owner + b.name, 'ja'));
-    $('bukken-list').innerHTML = props.map(p => `<option value="${p.name.replace(/"/g, '&quot;')}">${p.owner}</option>`).join('');
+    renderOptions();
     $('bukken').disabled = false;
-    $('bukken').placeholder = '物件名を入力して選ぶ';
   } catch (e) {
-    $('bukken').placeholder = '物件一覧を読めませんでした（再読み込みしてください）';
+    $('bukken').innerHTML = '<option value="">物件一覧を読めませんでした</option>';
+    $('owner').textContent = '⚠ ' + String(e.message || e) + '（再読み込みしても直らない場合は管理者へ）';
+    $('owner').className = 'owner ng';
+    return;
   }
   refresh();
 })();
