@@ -66,10 +66,6 @@
       <div class="owner" id="owner"></div>
     </div>
     <div class="field">
-      <label for="staff">名前</label>
-      <input type="text" id="staff" placeholder="例）大倉">
-    </div>
-    <div class="field">
       <label class="pick" for="files" id="pick-label"><b>写真を選ぶ</b><br>（複数まとめて選べます）</label>
       <input type="file" id="files" accept="image/*" multiple>
     </div>
@@ -175,16 +171,20 @@ function refresh() {
   const p = selectedProp();
   if (props.length) { $('owner').textContent = p ? 'オーナー：' + p.owner : ''; $('owner').className = 'owner'; }
   $('pick-label').innerHTML = files.length ? '<b>' + files.length + '枚 選択中</b><br>（押すと選び直せます）' : '<b>写真を選ぶ</b><br>（複数まとめて選べます）';
-  $('go').disabled = busy || !p || !files.length || !$('date').value || !$('staff').value.trim();
+  // ボタンは送信中以外は押せる（足りない項目は押したときに教える）
+  $('go').disabled = busy;
+  $('go').textContent = busy ? '送信中…' : (files.length ? files.length + '枚をアップする' : 'アップする');
 }
 
 async function upload(list) {
   const p = selectedProp();
   const date = $('date').value;
-  const staff = $('staff').value.trim();
+  const staff = '後から追加';
   busy = true; refresh();
   $('progress').classList.remove('hidden');
   $('result').classList.add('hidden');
+  $('pmsg').textContent = '準備中…（最初は10秒ほどかかることがあります）';
+  $('progress').scrollIntoView({ behavior: 'smooth', block: 'center' });
   let done = 0, failed = 0;
   const total = list.length;
   const fails = [];
@@ -235,7 +235,7 @@ async function upload(list) {
   busy = false;
   if (done > 0 && prep) {
     lastUrl = prep.folderUrl;
-    post({ action: 'finish', staff: staff + '（後から追加）', bukken: p.name, date, count: done, failed: total - done, reason: '', folderUrl: lastUrl }).catch(() => {});
+    post({ action: 'finish', staff: staff, bukken: p.name, date, count: done, failed: total - done, reason: '', folderUrl: lastUrl }).catch(() => {});
     $('pmsg').innerHTML = (total - done)
       ? `<span class="ng">${done}枚アップ、${total - done}枚 送れませんでした。</span>`
       : `<span class="ok">✅ ${p.name}（${date}）に ${done}枚アップしました。</span>`;
@@ -257,15 +257,20 @@ async function upload(list) {
 }
 
 $('date').value = todayJst();
-$('staff').value = lsGet('upload_staff');
 ['input', 'change'].forEach(ev => {
   $('bukken').addEventListener(ev, refresh);
   $('date').addEventListener(ev, refresh);
-  $('staff').addEventListener(ev, () => { lsSet('upload_staff', $('staff').value.trim()); refresh(); });
 });
 $('bukken-filter').addEventListener('input', renderOptions);
 $('files').addEventListener('change', e => { files = Array.from(e.target.files || []); refresh(); });
-$('go').addEventListener('click', () => { if (files.length) upload(files); });
+$('go').addEventListener('click', () => {
+  const miss = [];
+  if (!$('date').value) miss.push('清掃日');
+  if (!selectedProp()) miss.push('物件');
+  if (!files.length) miss.push('写真');
+  if (miss.length) { alert(miss.join('・') + ' を入れてください'); return; }
+  upload(files);
+});
 $('retry').addEventListener('click', () => { if (failedFiles.length) upload(failedFiles.slice()); });
 $('copy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(lastUrl); $('copy').textContent = 'コピーしました'; }
