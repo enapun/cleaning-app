@@ -1319,6 +1319,12 @@ async function confirmAnnouncements() {
 // Discord Webhook URL（ここを新しいURLに変更する）
 const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1507697835896868974/KI4P3u92jvkyStjOA_1KBJfOlhthZKW6ao5SP8Xbd0akSIMGSOZaYZi9xJYxgrxYhP6g';
 
+// リネン未完成の通知を別チャンネルにも送る（そのチャンネルのウェブフックURL。空なら送らない）
+const LINEN_WEBHOOK = 'https://discord.com/api/webhooks/1567820861384302682/txMLv1dYuGd6m2ZdtfmA6Fkg8RCzrvoIZ_A4OK-229R_JdI1fGAi10HoBMyBKcjlSxIj';
+async function sendDiscordTo(url, message) {
+  if (!url) return;
+  try { await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: message }) }); } catch (e) {}
+}
 async function sendDiscord(message) {
   if (!DISCORD_WEBHOOK) return;
   try {
@@ -1675,7 +1681,9 @@ async function photoConfirmSkip(i) {
   photoSkipOpen = ''; photoSkipReason = ''; linenInput = {}; photoShowError('');
   renderPhotoList(); renderHome();
   photoPost({ action: 'finish', staff: currentStaff, bukken: b, date: today(), count: 0, failed: 0, reason: full, folderUrl: '' }).catch(() => {});
-  await sendDiscord(`━━━━━━━━━━━━\n⚠️ 清掃写真なし\n👤 名前：${currentStaff}\n📍 物件名：${b}\n📝 理由：${full}\n━━━━━━━━━━━━`);
+  const skipMsg = `━━━━━━━━━━━━\n⚠️ 清掃写真なし\n👤 名前：${currentStaff}\n📍 物件名：${b}\n📝 理由：${full}\n━━━━━━━━━━━━`;
+  await sendDiscord(skipMsg);
+  if (reason === PHOTO_SKIP_LINEN) await sendDiscordTo(LINEN_WEBHOOK, skipMsg); // リネン未完成は専用チャンネルにも
 }
 
 // 写真GASへの依頼（text/plainで送ると事前確認が発生しない）
