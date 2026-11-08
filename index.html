@@ -1321,6 +1321,8 @@ const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1507697835896868974/KI
 
 // リネン未完成の通知を別チャンネルにも送る（そのチャンネルのウェブフックURL。空なら送らない）
 const LINEN_WEBHOOK = 'https://discord.com/api/webhooks/1567820861384302682/txMLv1dYuGd6m2ZdtfmA6Fkg8RCzrvoIZ_A4OK-229R_JdI1fGAi10HoBMyBKcjlSxIj';
+// 清掃写真（アップした写真）の通知を別チャンネルにも送る
+const PHOTO_WEBHOOK = 'https://discord.com/api/webhooks/1568959226678612008/tmAqW1iisVX5Zl3XuVn8ExF8ZnCrmmB7h4mm7nZQMR72pcZ38YOxC70TXK3NdMs1g58w';
 async function sendDiscordTo(url, message) {
   if (!url) return;
   try { await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: message }) }); } catch (e) {}
@@ -1792,7 +1794,9 @@ async function uploadPhotos(bukken, files) {
   else toast(`✅ ${bukken}：${done}枚アップしました`, 3000);
   if (done > 0) {
     photoPost({ action: 'finish', staff: currentStaff, bukken, date: today(), count: done, failed, reason: '', folderUrl }).catch(() => {});
-    await sendDiscord(`━━━━━━━━━━━━\n📷 清掃写真\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🖼 枚数：${done}枚${failed ? '（失敗' + failed + '枚）' : ''}${albumUrl ? '\n🔗 ' + albumUrl : ''}\n━━━━━━━━━━━━`);
+    const photoMsg = `━━━━━━━━━━━━\n📷 清掃写真\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🖼 枚数：${done}枚${failed ? '（失敗' + failed + '枚）' : ''}${albumUrl ? '\n🔗 ' + albumUrl : ''}\n━━━━━━━━━━━━`;
+    await sendDiscord(photoMsg);
+    await sendDiscordTo(PHOTO_WEBHOOK, photoMsg); // 清掃写真チャンネルにも
   }
 }
 
