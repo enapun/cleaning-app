@@ -531,6 +531,7 @@ select.form-control { -webkit-appearance: none; }
     <div class="form-group" id="kanryo-hoshu-block">
       <label class="form-label">補充依頼（必要なものを選択）</label>
       <div id="kanryo-hoshu-checks" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px"></div>
+      <input class="form-control" id="kanryo-hoshu-other" placeholder="「その他」の中身を入力（例：単二電池、ハンガー）" style="display:none;margin-top:8px">
     </div>
     <div class="form-group" id="kanryo-hoshu-memo-block" style="display:none">
       <label class="form-label">補充・備考（任意）</label>
@@ -1154,6 +1155,16 @@ function toggleHoshu(el) {
     });
     el.classList.toggle('checked');
   }
+  syncHoshuOther();
+}
+
+// 「その他」にチェックがある時だけ、中身の入力欄を出す
+function syncHoshuOther() {
+  const other = document.getElementById('kanryo-hoshu-other');
+  if (!other) return;
+  const on = [...document.querySelectorAll('#kanryo-hoshu-checks .hoshu-item.checked span')].some(x => x.textContent === 'その他');
+  other.style.display = on ? 'block' : 'none';
+  if (on) other.focus();
 }
 
 function getCheckedHoshu(containerId) {
@@ -1385,9 +1396,15 @@ async function submitKanryo() {
   const bukken = document.getElementById('kanryo-bukken').value;
   const time   = document.getElementById('kanryo-time').value || nowTime();
   const memo   = document.getElementById('kanryo-memo').value;
-  const hoshu  = getCheckedHoshu('kanryo-hoshu-checks');
+  let hoshu   = getCheckedHoshu('kanryo-hoshu-checks');
   if (!bukken) { toast('物件を選択してください'); return; }
   if (!hoshu) { toast('補充項目を選択してください（「補充なし」でも可）'); return; }
+  // 「その他」は、入力された中身に置き換える（Discord・翌日シフトにも中身が出る）
+  if (hoshu.split('、').includes('その他')) {
+    const otherText = (document.getElementById('kanryo-hoshu-other').value || '').trim();
+    if (!otherText) { toast('「その他」の中身を入力してください', 3000); document.getElementById('kanryo-hoshu-other').focus(); return; }
+    hoshu = hoshu.split('、').map(x => x === 'その他' ? otherText : x).join('、');
+  }
   const ct = propTasksOf(bukken).checks;
   const ctDone = document.querySelectorAll('#kanryo-tasks .task-item.checked').length;
   if (ct.length && ctDone < ct.length) { toast(`☑ 物件チェックが残っています（${ctDone}/${ct.length}）`, 3000); return; }
@@ -2427,6 +2444,8 @@ function openModal(id) {
     document.querySelectorAll('#kanryo-hoshu-checks .hoshu-item').forEach(i => i.classList.remove('checked'));
     const memoEl = document.getElementById('kanryo-hoshu-memo');
     if (memoEl) memoEl.value = '';
+    const otherEl = document.getElementById('kanryo-hoshu-other');
+    if (otherEl) { otherEl.value = ''; otherEl.style.display = 'none'; }
   }
   // 退勤モーダルを開くとき、休憩開始・終了の記録から休憩時間を自動計算
   if (id === 'm-taikkin') {
