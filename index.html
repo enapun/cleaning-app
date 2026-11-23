@@ -66,6 +66,8 @@ body { background: var(--bg); font-family: var(--sans); color: var(--text); min-
 .topbar { background: var(--card); border-bottom: 0.5px solid var(--border); padding: calc(var(--safe-top) + 12px) 16px 12px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
 .topbar-left { }
 .topbar-name { font-size: 17px; font-weight: 700; }
+.tb-rank { margin-left: 8px; font-size: 13px; font-weight: 700; color: #b7791f; background: #fff7e0; border: 1px solid #f6d58b; border-radius: 999px; padding: 1px 8px; vertical-align: 2px; letter-spacing: 1px; }
+.tb-rank:empty { display: none; }
 .topbar-date { font-size: 12px; color: var(--muted); margin-top: 1px; }
 .topbar-right { display: flex; gap: 8px; align-items: center; }
 .icon-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--bg); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
@@ -214,6 +216,14 @@ select.form-control { -webkit-appearance: none; }
 .shift-date-col.today-col .shift-date-num { color:var(--accent); }
 
 /* CONNECTING overlay */
+.break-overlay { display: none; position: fixed; inset: 0; z-index: 250; background: linear-gradient(160deg,#ff9500,#ff6a00); color: #fff; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; text-align: center; }
+.break-overlay.open { display: flex; }
+.break-overlay .bo-icon { font-size: 72px; line-height: 1; }
+.break-overlay .bo-title { font-size: 30px; font-weight: 800; letter-spacing: 2px; }
+.break-overlay .bo-sub { font-size: 15px; opacity: .92; }
+.break-overlay .bo-time { font-size: 48px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.break-overlay .bo-end { margin-top: 10px; width: 100%; max-width: 340px; padding: 20px; border: none; border-radius: 18px; background: #fff; color: #ff6a00; font-size: 22px; font-weight: 800; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.break-overlay .bo-mistake { margin-top: 4px; background: rgba(255,255,255,.18); color: #fff; border: 1.5px solid rgba(255,255,255,.7); border-radius: 12px; padding: 10px 16px; font-size: 14px; font-weight: 700; }
 .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.85); backdrop-filter: blur(4px); z-index: 300; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
 .loading-overlay.show { display: flex; }
 .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
@@ -323,7 +333,7 @@ select.form-control { -webkit-appearance: none; }
 <div class="screen" id="s-app">
   <div class="topbar">
     <div class="topbar-left">
-      <div class="topbar-name" id="tb-name">—</div>
+      <div class="topbar-name"><span id="tb-name">—</span><span id="tb-rank" class="tb-rank"></span></div>
       <div class="topbar-date" id="tb-date">—</div>
     </div>
     <div class="topbar-right">
@@ -571,8 +581,8 @@ select.form-control { -webkit-appearance: none; }
       <input class="form-control" id="taikkin-time" type="time">
     </div>
     <div class="form-group">
-      <label class="form-label">休憩時間（分）</label>
-      <input class="form-control" id="taikkin-kyukei" type="number" placeholder="0" inputmode="numeric">
+      <label class="form-label">休憩時間（分）<span style="font-weight:400;color:#8e8e93">　☕ボタンの記録から自動</span></label>
+      <input class="form-control" id="taikkin-kyukei" type="number" placeholder="0" inputmode="numeric" readonly style="background:#f2f2f7">
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -703,6 +713,16 @@ select.form-control { -webkit-appearance: none; }
 </div>
 
 <!-- Loading -->
+<!-- ☕ 休憩中画面（休憩終了を押すまで他の操作はできない） -->
+<div class="break-overlay" id="break-overlay">
+  <div class="bo-icon">☕</div>
+  <div class="bo-title">休憩中</div>
+  <div class="bo-sub" id="bo-start">開始 —:——</div>
+  <div class="bo-time" id="bo-elapsed">0分</div>
+  <button class="bo-end" onclick="submitKyukeiEnd()">🔄 休憩終了（業務に戻る）</button>
+  <button class="bo-mistake" id="bo-mistake" onclick="kyukeiMistake()">⚠ 間違えて押した（0分で戻す）</button>
+  <div class="bo-sub" style="font-size:12px;margin-top:8px">休憩終了を押すまで、ほかのボタンは使えません</div>
+</div>
 <div class="loading-overlay" id="loading">
   <div class="spinner"></div>
   <div class="loading-text" id="loading-text">送信中...</div>
@@ -717,6 +737,7 @@ select.form-control { -webkit-appearance: none; }
 let GAS_URL = '';
 let currentStaff = '';
 let staffList = [];
+let plusMap = {};   // 🧽 物件ごとの次の追加清掃 { 物件: {item, no, total} }
 let bukkenList = [];
 let manualUrls = {};   // 物件名 -> マニュアルURL（manuals.jsonから読込）
 let todayLog = [];     // local records for today
@@ -745,6 +766,7 @@ function save() {
   localStorage.setItem('cos_log_'+today(), JSON.stringify(todayLog));
   localStorage.setItem('cos_bukken', JSON.stringify(bukkenList));
   localStorage.setItem('cos_staff_list', JSON.stringify(staffList));
+  localStorage.setItem('cos_plus', JSON.stringify(plusMap));
 }
 function load() {
   // 固定URLを優先（管理者が変更するだけで全員に反映）
@@ -754,6 +776,7 @@ function load() {
   todayLog = JSON.parse(localStorage.getItem('cos_log_'+today()) || '[]');
   bukkenList = JSON.parse(localStorage.getItem('cos_bukken') || '[]');
   staffList = JSON.parse(localStorage.getItem('cos_staff_list') || '[]');
+  try { plusMap = JSON.parse(localStorage.getItem('cos_plus') || '{}') || {}; } catch (e) { plusMap = {}; }
   loadPhotoStatus();
   try { propTasks = JSON.parse(localStorage.getItem('cos_prop_tasks') || '{}'); } catch (e) { propTasks = {}; }
   loadPropTasks();
@@ -1053,6 +1076,7 @@ function goSetup() {
 function initApp() {
   const now = new Date();
   document.getElementById('tb-name').textContent = currentStaff;
+  showMyRank();
   document.getElementById('tb-date').textContent = now.getFullYear()+'年'+MONTHS[now.getMonth()]+now.getDate()+'日（'+DAYS[now.getDay()]+'）';
   shiftMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   histMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -1071,10 +1095,21 @@ async function autoSync() {
     if (res.ok) {
       staffList = res.staff || [];
       bukkenList = res.bukken || [];
+      if (res.plus) plusMap = res.plus;
       populateBukkenSelects();
       save();
+      showMyRank();
     }
   } catch(e) {}
+}
+
+// 自分の★（月間シートの★2〜★5）を名前の横に出す
+function showMyRank() {
+  const el = document.getElementById('tb-rank');
+  if (!el) return;
+  const info = staffList.find(s => s.name === currentStaff) || {};
+  const r = Number(info.rank) || 0;
+  el.textContent = r > 0 ? '★' + r : '';
 }
 
 const HOSHU_ITEMS = [
@@ -1201,6 +1236,8 @@ function renderHome() {
   const canWork = st === 'working';
   const canStart = st === 'idle';
   const isCleanersHigh = ['ｸﾘｰﾅｰｽﾞﾊｲ','クリーナーズハイ','クリIナIズハイ'].includes(currentStaff);
+  const kyukeiLocked = kyukeiLockLeft();
+  updateBreakOverlay();
 
   if (isCleanersHigh) {
     grid.innerHTML = `
@@ -1236,15 +1273,10 @@ function renderHome() {
         <div class="action-btn-label">清掃完了</div>
         <div class="action-btn-sub">物件を退室</div>
       </button>
-      <button class="action-btn ${canWork?'':'ab-disabled'}" style="background:#ff9500;color:#fff" onclick="${canWork?'submitKyukeiStart()':''}">
+      <button class="action-btn ${canWork&&!kyukeiLocked?'':'ab-disabled'}" style="grid-column:1/-1;${canWork&&!kyukeiLocked?'background:#ff9500;color:#fff;':''}" onclick="${canWork?'submitKyukeiStart()':''}">
         <div class="action-btn-icon">☕</div>
         <div class="action-btn-label">休憩開始</div>
-        <div class="action-btn-sub">休憩に入る</div>
-      </button>
-      <button class="action-btn ${canWork?'':'ab-disabled'}" style="background:#5856d6;color:#fff" onclick="${canWork?'submitKyukeiEnd()':''}">
-        <div class="action-btn-icon">🔄</div>
-        <div class="action-btn-label">休憩終了</div>
-        <div class="action-btn-sub">業務に戻る</div>
+        <div class="action-btn-sub">${kyukeiLocked?'出勤から'+KYUKEI_LOCK_MIN+'分は押せません（あと'+kyukeiLocked+'分）':'押すと休憩中の画面になります'}</div>
       </button>`;
   }
 
@@ -1368,7 +1400,54 @@ async function submitKaisho() {
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
 
+// ========== ☕ 休憩 ==========
+const KYUKEI_LOCK_MIN = 15;   // 出勤してからこの分数は休憩開始を押せない（出勤と同時の押し間違い防止）
+function hmToMins(t) { const [h,m] = String(t||'0:0').split(':').map(Number); return (h||0)*60 + (m||0); }
+function nowMins() { const n = new Date(); return n.getHours()*60 + n.getMinutes(); }
+// 出勤から何分たっていないか（押せない残り分。0なら押せる）
+function kyukeiLockLeft() {
+  const sh = todayLog.find(l => l.kind === '出勤');
+  if (!sh) return 0;
+  const left = KYUKEI_LOCK_MIN - (nowMins() - hmToMins(sh.time));
+  return left > 0 ? left : 0;
+}
+// 今休憩中か（最後の休憩記録が「休憩開始」）
+function currentBreak() {
+  const bs = todayLog.filter(l => l.kind === '休憩開始' || l.kind === '休憩終了');
+  const last = bs[bs.length - 1];
+  return (last && last.kind === '休憩開始' && getAppState() === 'working') ? last : null;
+}
+let _breakTimer = null;
+function updateBreakOverlay() {
+  const ov = document.getElementById('break-overlay');
+  if (!ov) return;
+  const b = currentBreak();
+  if (!b) {
+    ov.classList.remove('open');
+    if (_breakTimer) { clearInterval(_breakTimer); _breakTimer = null; }
+    return;
+  }
+  const draw = () => {
+    let el = nowMins() - hmToMins(b.time); if (el < 0) el += 1440;
+    document.getElementById('bo-start').textContent = '開始 ' + b.time;
+    document.getElementById('bo-elapsed').textContent = (el >= 60 ? Math.floor(el/60) + '時間' : '') + (el % 60) + '分';
+    document.getElementById('bo-mistake').style.display = el <= 3 ? 'inline-block' : 'none';  // 押して3分以内だけ
+  };
+  draw();
+  ov.classList.add('open');
+  if (!_breakTimer) _breakTimer = setInterval(draw, 15000);
+}
+// 間違えて押した → すぐ休憩終了（0分）にして、メモに「誤操作」を残す
+function kyukeiMistake() {
+  if (!confirm('間違えて押した休憩を取り消しますか？\n（休憩0分として記録されます）')) return;
+  submitKyukeiEnd('誤操作');
+}
+
 async function submitKyukeiStart() {
+  if (getAppState() !== 'working') return;
+  if (currentBreak()) { updateBreakOverlay(); return; }
+  const lock = kyukeiLockLeft();
+  if (lock) { toast('⏳ 出勤から' + KYUKEI_LOCK_MIN + '分は休憩を押せません（あと' + lock + '分）', 3000); return; }
   showLoading('休憩開始を記録中...');
   try {
     const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'休憩開始', time:nowTime(), bukken:'', kyukei:0, transport:0, parking:0, distance:0, bihin:0, memo:'' });
@@ -1380,14 +1459,18 @@ async function submitKyukeiStart() {
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
 
-async function submitKyukeiEnd() {
+async function submitKyukeiEnd(memo) {
+  memo = (typeof memo === 'string') ? memo : '';
+  const b = currentBreak();
+  // 誤操作のときは開始と同じ時刻で終了（＝0分）
+  const endTime = (memo === '誤操作' && b) ? b.time : nowTime();
   showLoading('休憩終了を記録中...');
   try {
-    const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'休憩終了', time:nowTime(), bukken:'', kyukei:0, transport:0, parking:0, distance:0, bihin:0, memo:'' });
+    const res = await gasPost({ type:'kintai', staff:currentStaff, date:today(), kind:'休憩終了', time:endTime, bukken:'', kyukei:0, transport:0, parking:0, distance:0, bihin:0, memo:memo });
     if (res.ok) {
-      todayLog.push({ kind:'休憩終了', time:nowTime(), date:today() });
-      save(); renderHome(); toast('🔄 休憩終了を記録しました');
-      await sendDiscord(`━━━━━━━━━━━━\n🔄 休憩終了\n👤 名前：${currentStaff}\n🕐 時刻：${nowTime()}\n━━━━━━━━━━━━`);
+      todayLog.push({ kind:'休憩終了', time:endTime, date:today(), memo:memo });
+      save(); renderHome(); toast(memo === '誤操作' ? '↩ 休憩を取り消しました（0分）' : '🔄 休憩終了を記録しました');
+      await sendDiscord(`━━━━━━━━━━━━\n🔄 休憩終了${memo === '誤操作' ? '（押し間違い・0分）' : ''}\n👤 名前：${currentStaff}\n🕐 時刻：${endTime}\n━━━━━━━━━━━━`);
     } else { toast('❌ エラー: ' + res.error, 3000); }
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
@@ -1631,6 +1714,7 @@ function renderPhotoList() {
     if (retryN && !up) {
       body += `<button class="modal-btn" style="background:#ff9500;color:#fff;margin:8px 0 0" onclick="photoRetrySend(${i})">⚠️ 送れなかった${retryN}枚を再送</button>`;
     }
+    body += plusBlockHtml(b, i, !!up);
     return `<div style="border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
         <div style="font-weight:600;font-size:15px">${escHtml(b)}</div>${badge}
@@ -1640,6 +1724,7 @@ function renderPhotoList() {
 
 function photoPick(i) {
   if (photoUploading) { toast('今の送信が終わるまでお待ちください'); return; }
+  photoPlusMode = false;
   photoTarget = photoBukkenToday()[i];
   photoShowError('');
   document.getElementById('photo-input').click();
@@ -1648,7 +1733,9 @@ function onPhotoPicked(input) {
   const files = Array.from(input.files || []);
   input.value = '';
   if (!files.length || !photoTarget) return;
-  uploadPhotos(photoTarget, files);
+  const plusItem = photoPlusMode ? plusItemFor(photoTarget) : '';
+  photoPlusMode = false;
+  uploadPhotos(photoTarget, files, plusItem);
 }
 function photoRetrySend(i) {
   if (photoUploading) { toast('今の送信が終わるまでお待ちください'); return; }
@@ -1747,7 +1834,8 @@ async function photoRetryCall(fn) {
   throw last;
 }
 
-async function uploadPhotos(bukken, files) {
+async function uploadPhotos(bukken, files, plusItem) {
+  plusItem = plusItem || '';
   photoUploading = { bukken, done: 0, failed: 0, total: files.length };
   photoRetry[bukken] = [];
   renderPhotoList();
@@ -1758,7 +1846,8 @@ async function uploadPhotos(bukken, files) {
   let albumUrl = '';   // 実際に写真を入れたフォルダ（Discordに載せる）
   const n = new Date();
   // 保存先は オーナー/月/日 フォルダ。同じ日に同じオーナーの別物件が混ざるので、ファイル名の頭に物件名を付ける
-  const prefix = String(bukken).normalize('NFKC').replace(/[\\/:*?"<>|\s]+/g, '') + '_' + pad(n.getHours()) + pad(n.getMinutes()) + pad(n.getSeconds());
+  const prefix = String(bukken).normalize('NFKC').replace(/[\\/:*?"<>|\s]+/g, '') + '_' + pad(n.getHours()) + pad(n.getMinutes()) + pad(n.getSeconds())
+    + (plusItem ? '_追加清掃_' + String(plusItem).normalize('NFKC').replace(/[\\/:*?"<>|\s（）()]+/g, '') : '');
   try {
     const prep = await photoRetryCall(() => photoPost({ action: 'prepare', bukken, date: today() }));
     folderUrl = prep.folderUrl;
@@ -1801,10 +1890,16 @@ async function uploadPhotos(bukken, files) {
   photoUploading = null;
   photoRetry[bukken] = failed ? failedFiles : [];
   if (wakeLock) wakeLock.release().catch(() => {});
-  if (done > 0) {
+  if (done > 0 && !plusItem) {
     const prev = photoStatus[bukken];
-    photoStatus[bukken] = { count: ((prev && prev.count) || 0) + done, skipped: false, reason: '', folderUrl };
+    photoStatus[bukken] = Object.assign({}, prev || {}, { count: ((prev && prev.count) || 0) + done, skipped: false, reason: '', folderUrl });
     savePhotoStatus();
+  }
+  if (plusItem) {
+    if (done > 0) await plusRecord(bukken, plusItem, 'やった', done, '', albumUrl);
+    renderPhotoList();
+    if (failed) toast(`⚠️ ${failed}枚送れませんでした。もう一度「やった（写真）」から送ってください`, 5000);
+    return;
   }
   renderPhotoList(); renderHome();
   if (failed) toast(`⚠️ ${failed}枚送れませんでした。「再送」を押してください`, 5000);
@@ -1815,6 +1910,73 @@ async function uploadPhotos(bukken, files) {
     await sendDiscord(photoMsg);
     await sendDiscordTo(PHOTO_WEBHOOK, photoMsg); // 清掃写真チャンネルにも
   }
+}
+
+
+// ========== 🧽 追加清掃（プラス清掃） ==========
+// 写真画面の各物件に「今日の追加清掃」を出す。やった→写真を送る／できなかった／この物件にない
+let photoPlusMode = false;
+function plusInfoFor(b) {
+  if (!plusMap) return null;
+  if (plusMap[b]) return plusMap[b];
+  const n = s => String(s || '').normalize('NFKC').replace(/\s+/g, '');
+  const k = Object.keys(plusMap).find(x => n(x) === n(b));
+  return k ? plusMap[k] : null;
+}
+function plusItemFor(b) { const p = plusInfoFor(b); return p ? p.item : ''; }
+function plusBlockHtml(b, i, uploading) {
+  if (!photoTargetStaff()) return '';
+  const p = plusInfoFor(b);
+  if (!p) return '';
+  const st = photoStatus[b] && photoStatus[b].plus;
+  const head = `<div style="font-weight:600;font-size:14px">🧽 今日の追加清掃 <span style="font-size:12px;color:var(--muted)">（${p.no}/${p.total}回目）</span></div>
+    <div style="font-size:15px;margin:4px 0 2px">${escHtml(p.item)}</div>`;
+  let inner;
+  if (st) {
+    const label = st.result === 'やった' ? `✅ やった（写真${st.count || 0}枚）` : st.result === 'この物件にない' ? '➖ この物件にない' : '⚠️ できなかった' + (st.reason ? '：' + escHtml(st.reason) : '');
+    inner = `<div style="font-size:13px;color:var(--green-d);font-weight:600;margin-top:4px">${label}</div>`;
+    if (st.result === 'やった') inner += `<button class="modal-btn modal-btn-cancel" style="margin:6px 0 0" onclick="plusPick(${i})">＋ 追加清掃の写真を追加</button>`;
+  } else {
+    inner = `<button class="modal-btn" style="background:#0b8043;color:#fff;margin:6px 0 0" ${uploading ? 'disabled' : ''} onclick="plusPick(${i})">✅ やった（写真を送る）</button>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="modal-btn modal-btn-cancel" style="margin:0;flex:1" onclick="plusNotDone(${i})">できなかった</button>
+        <button class="modal-btn modal-btn-cancel" style="margin:0;flex:1" onclick="plusNone(${i})">この物件にない</button>
+      </div>`;
+  }
+  return `<div style="margin-top:10px;padding:10px;background:rgba(11,128,67,.07);border:1px dashed rgba(11,128,67,.4);border-radius:10px">${head}${inner}</div>`;
+}
+function plusPick(i) {
+  if (photoUploading) { toast('今の送信が終わるまでお待ちください'); return; }
+  photoTarget = photoBukkenToday()[i];
+  photoPlusMode = true;
+  photoShowError('');
+  document.getElementById('photo-input').click();
+}
+async function plusNotDone(i) {
+  const b = photoBukkenToday()[i];
+  const item = plusItemFor(b);
+  const reason = (prompt('「' + item + '」ができなかった理由を入れてください（例：時間が足りなかった）') || '').trim();
+  if (!reason) { toast('理由を入れてください'); return; }
+  await plusRecord(b, item, 'できなかった', 0, reason, '');
+}
+async function plusNone(i) {
+  const b = photoBukkenToday()[i];
+  const item = plusItemFor(b);
+  if (!confirm(b + ' には「' + item + '」がありませんか？\n今後この物件では、この追加清掃をとばします。')) return;
+  await plusRecord(b, item, 'この物件にない', 0, '', '');
+}
+async function plusRecord(b, item, result, count, reason, url) {
+  const prev = photoStatus[b] || { count: 0, skipped: false, reason: '', folderUrl: '' };
+  const prevPlus = prev.plus && prev.plus.result === 'やった' ? prev.plus.count || 0 : 0;
+  prev.plus = { item, result, count: (result === 'やった' ? prevPlus + count : 0), reason };
+  photoStatus[b] = prev;
+  savePhotoStatus();
+  renderPhotoList();
+  try { await gasPost({ type: 'plus', staff: currentStaff, date: today(), bukken: b, item, result, count, reason }); } catch (e) {}
+  const icon = result === 'やった' ? '✅' : result === 'この物件にない' ? '➖' : '⚠️';
+  const msg = `━━━━━━━━━━━━\n🧽 追加清掃\n👤 名前：${currentStaff}\n📍 物件名：${b}\n🧽 項目：${item}\n${icon} ${result}${result === 'やった' ? '（写真' + count + '枚）' : ''}${reason ? '\n📝 ' + reason : ''}${url ? '\n🔗 ' + url : ''}\n━━━━━━━━━━━━`;
+  try { await sendDiscord(msg); } catch (e) {}
+  toast(icon + ' 追加清掃「' + item + '」：' + result, 3000);
 }
 
 // ========== SHIFT EXCEL UPLOAD ==========
@@ -2460,7 +2622,7 @@ function openModal(id) {
         const [eh, em] = ends[i].split(':').map(Number);
         totalBreakMins += (eh * 60 + em) - (sh * 60 + sm);
       }
-      if (totalBreakMins > 0) kyukeiEl.value = totalBreakMins;
+      kyukeiEl.value = totalBreakMins > 0 ? totalBreakMins : 0;
     }
     const bihinEl = document.getElementById('taikkin-bihin');
     if (bihinEl) bihinEl.value = '';
@@ -2534,7 +2696,9 @@ async function syncData() {
     if (s.ok) { staffList = s.staff; }
     const b = await gasGet({ type:'bukken' });
     if (b.ok) { bukkenList = b.bukken; populateBukkenSelects(); }
+    try { const i = await gasGet({ type:'init' }); if (i.ok) { if (i.plus) plusMap = i.plus; if (i.staff) staffList = i.staff; } } catch (e) {}
     save();
+    showMyRank();
     toast('✅ 同期完了');
   } catch(e) { toast('❌ 通信エラー', 3000); } finally { hideLoading(); }
 }
