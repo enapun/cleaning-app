@@ -766,6 +766,24 @@ select.form-control { -webkit-appearance: none; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
+// 📱 LINEの中のブラウザで開かれたら、いつものブラウザ（Safari/Chrome）で開き直す
+// （LINEの中だと記録が消えたり、写真の選択・送信が止まりやすいため）
+(function () {
+  if (!/\bLine\//i.test(navigator.userAgent)) return;
+  const u = new URL(location.href);
+  if (!u.searchParams.has('openExternalBrowser')) {
+    u.searchParams.set('openExternalBrowser', '1');
+    location.replace(u.toString());
+    return;
+  }
+  // それでもLINEの中のままなら案内を出す
+  document.addEventListener('DOMContentLoaded', function () {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:9999;background:#e53935;color:#fff;padding:12px 14px;font-size:14px;font-weight:700;line-height:1.5;text-align:center';
+    d.innerHTML = '⚠ LINEの中で開いています<br>右上の「︙」→「ブラウザで開く」で開き直してください<br><span style="font-weight:400;font-size:12px">（このままだと記録が消えたり、写真が送れないことがあります）</span>';
+    document.body.appendChild(d);
+  });
+})();
 // ========== STATE ==========
 let GAS_URL = '';
 let currentStaff = '';
