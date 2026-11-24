@@ -150,6 +150,16 @@ select.form-control { -webkit-appearance: none; }
 .modal-btn-green { background: var(--green); color: #fff; }
 .modal-btn-orange { background: var(--orange); color: #fff; }
 .modal-btn-cancel { background: var(--bg); color: var(--muted); margin-top: 8px; }
+/* ✋ シフト希望 */
+.kb-row { display:flex; align-items:center; gap:6px; padding:8px 0; border-bottom:1px solid var(--border); }
+.kb-row.past { opacity:.4; }
+.kb-date { width:64px; font-size:14px; font-weight:600; flex-shrink:0; }
+.kb-date .sun { color:#e53935; } .kb-date .sat { color:#1e88e5; }
+.kb-btns { display:flex; gap:5px; flex:1; flex-wrap:wrap; }
+.kb-btn { min-width:38px; padding:8px 6px; border-radius:10px; border:1.5px solid var(--border); background:var(--card); font-size:15px; font-weight:700; font-family:var(--sans); cursor:pointer; }
+.kb-btn.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+.kb-time { width:78px; padding:8px 6px; border-radius:10px; border:1.5px solid var(--border); font-size:14px; font-family:var(--sans); }
+.kb-time.on { border-color:var(--accent); background:rgba(0,122,255,.08); }
 
 /* HISTORY */
 .hist-day { margin-bottom: 16px; }
@@ -398,6 +408,11 @@ select.form-control { -webkit-appearance: none; }
         <div class="month-nav-lbl" id="shift-month-lbl"></div>
         <button class="month-nav-btn" onclick="changeShiftMonth(1)">›</button>
       </div>
+
+      <!-- ✋ シフト希望 -->
+      <button onclick="openKibou()" style="width:100%;padding:14px;background:var(--accent);border:none;border-radius:14px;font-family:var(--sans);font-size:15px;font-weight:700;color:#fff;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px">
+        <span style="font-size:18px">✋</span> シフト希望を出す
+      </button>
 
       <!-- アップロードボタン -->
       <button onclick="openModal('m-shift-upload')" style="width:100%;padding:12px;background:var(--card);border:1.5px dashed var(--border);border-radius:14px;font-family:var(--sans);font-size:14px;font-weight:600;color:var(--accent);cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">
@@ -691,6 +706,24 @@ select.form-control { -webkit-appearance: none; }
 </div>
 
 <!-- シフトアップロードモーダル -->
+<div class="modal-bg" id="m-kibou">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✋ シフト希望</div>
+    <div class="month-nav" style="margin-bottom:8px">
+      <button class="month-nav-btn" onclick="changeKibouMonth(-1)">‹</button>
+      <div class="month-nav-lbl" id="kibou-month-lbl"></div>
+      <button class="month-nav-btn" onclick="changeKibouMonth(1)">›</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px;line-height:1.6">
+      ○・×・ー を選ぶか、時間を「17-」「11-18」のように入力<br>（明日以降の日だけ変更できます。同じボタンをもう一度押すと消えます）
+    </div>
+    <div id="kibou-list"></div>
+    <button class="modal-btn modal-btn-primary" id="kibou-save-btn" onclick="saveKibou()">この内容で提出</button>
+    <button class="modal-btn modal-btn-cancel" onclick="closeModal('m-kibou')">閉じる</button>
+  </div>
+</div>
+
 <div class="modal-bg" id="m-shift-upload">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
@@ -1590,7 +1623,7 @@ function toggleTask(el) {
 }
 
 const PHOTO_GAS_URL = 'https://script.google.com/macros/s/AKfycbwrnnrfyqQRdfoNHsZo44KBepaBP3NYGLXS8WTgGoYRZgKb4OcFSZ87sQhLCxbvBWgV/exec';
-const PHOTO_MAX_PX = 1600;  // 長辺
+const PHOTO_MAX_PX = 1280;  // 長辺（1600→1280に下げて速く）
 const PHOTO_BATCH  = 10;    // 1回のURL発行枚数
 const PHOTO_CONC   = 3;     // 同時処理数
 const PHOTO_SKIP_REASONS = ['リネン未完成の為', '研修中', '直接送信済み', 'その他（理由）'];
@@ -1848,8 +1881,11 @@ async function uploadPhotos(bukken, files, plusItem) {
   // 保存先は オーナー/月/日 フォルダ。同じ日に同じオーナーの別物件が混ざるので、ファイル名の頭に物件名を付ける
   const prefix = String(bukken).normalize('NFKC').replace(/[\\/:*?"<>|\s]+/g, '') + '_' + pad(n.getHours()) + pad(n.getMinutes()) + pad(n.getSeconds())
     + (plusItem ? '_追加清掃_' + String(plusItem).normalize('NFKC').replace(/[\\/:*?"<>|\s（）()]+/g, '') : '');
+  const tm = { start: Date.now(), prep: 0, resize: 0, url: 0, send: 0 };   // ⏱ どこで時間がかかっているか計測（Discordに出す）
   try {
+    let t = Date.now();
     const prep = await photoRetryCall(() => photoPost({ action: 'prepare', bukken, date: today() }));
+    tm.prep = Date.now() - t;
     folderUrl = prep.folderUrl;
     albumUrl = 'https://drive.google.com/drive/folders/' + prep.folderId;
     const batches = [];
@@ -1861,22 +1897,28 @@ async function uploadPhotos(bukken, files, plusItem) {
         const b = batches[next++];
         const items = [];
         for (const it of b) {
+          const tr = Date.now();
           try { items.push({ f: it.f, name: prefix + '_' + String(it.idx).padStart(3, '0') + '.jpg', blob: await photoResize(it.f) }); }
           catch (e) { failedFiles.push(it.f); photoUploading.failed++; tick(); }
+          tm.resize += Date.now() - tr;
         }
         if (!items.length) continue;
         let urls;
+        const tu = Date.now();
         try {
           const j = await photoRetryCall(() => photoPost({ action: 'sessions', origin: location.origin, folderId: prep.folderId, files: items.map(x => ({ name: x.name, size: x.blob.size })) }));
           urls = j.urls;
         } catch (e) {
           items.forEach(x => failedFiles.push(x.f)); photoUploading.failed += items.length; tick(); continue;
         }
+        tm.url += Date.now() - tu;
+        const ts = Date.now();
         await Promise.all(items.map(async (x, i) => {
           try { await photoRetryCall(() => photoPut(urls[i], x.blob)); photoUploading.done++; }
           catch (e) { failedFiles.push(x.f); photoUploading.failed++; }
           tick();
         }));
+        tm.send += Date.now() - ts;
       }
     };
     await Promise.all(Array.from({ length: Math.min(PHOTO_CONC, batches.length) }, worker));
@@ -1906,7 +1948,9 @@ async function uploadPhotos(bukken, files, plusItem) {
   else toast(`✅ ${bukken}：${done}枚アップしました`, 3000);
   if (done > 0) {
     photoPost({ action: 'finish', staff: currentStaff, bukken, date: today(), count: done, failed, reason: '', folderUrl }).catch(() => {});
-    const photoMsg = `━━━━━━━━━━━━\n📷 清掃写真\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🖼 枚数：${done}枚${failed ? '（失敗' + failed + '枚）' : ''}${albumUrl ? '\n🔗 ' + albumUrl : ''}\n━━━━━━━━━━━━`;
+    const sec = ms => Math.round(ms / 1000);
+    const tmLine = `⏱ ${sec(Date.now() - tm.start)}秒（準備${sec(tm.prep)}・縮小${sec(tm.resize)}・URL${sec(tm.url)}・送信${sec(tm.send)}）`;
+    const photoMsg = `━━━━━━━━━━━━\n📷 清掃写真\n👤 名前：${currentStaff}\n📍 物件名：${bukken}\n🖼 枚数：${done}枚${failed ? '（失敗' + failed + '枚）' : ''}${albumUrl ? '\n🔗 ' + albumUrl : ''}\n${tmLine}\n━━━━━━━━━━━━`;
     await sendDiscord(photoMsg);
     await sendDiscordTo(PHOTO_WEBHOOK, photoMsg); // 清掃写真チャンネルにも
   }
@@ -2633,6 +2677,81 @@ function openModal(id) {
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-bg').forEach(el => el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); }));
+
+// ========== ✋ シフト希望 ==========
+let kibouMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+let kibouDays = [];
+function kibouMonth6() { return kibouMonth.getFullYear() + pad(kibouMonth.getMonth() + 1); }
+function openKibou() {
+  kibouMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+  document.getElementById('m-kibou').classList.add('open');
+  loadKibou();
+}
+function changeKibouMonth(d) {
+  kibouMonth = new Date(kibouMonth.getFullYear(), kibouMonth.getMonth() + d, 1);
+  loadKibou();
+}
+async function loadKibou() {
+  document.getElementById('kibou-month-lbl').textContent = monthLbl(kibouMonth);
+  const list = document.getElementById('kibou-list');
+  list.innerHTML = '<div class="empty" style="padding:20px 0"><div class="empty-text">読み込み中...</div></div>';
+  kibouDays = [];
+  try {
+    const res = await gasGet({ type: 'kibou_get', staff: currentStaff, month: kibouMonth6() });
+    if (!res.ok) { list.innerHTML = '<div class="empty" style="padding:20px 0"><div class="empty-text">' + escHtml(res.error || '読み込めませんでした') + '</div></div>'; return; }
+    kibouDays = res.days.map(d => ({ ...d, orig: d.value }));
+    renderKibou();
+  } catch (e) {
+    list.innerHTML = '<div class="empty" style="padding:20px 0"><div class="empty-text">通信エラー。もう一度開いてください</div></div>';
+  }
+}
+function kibouIsTime(v) { return v !== '' && !['○', '×', 'ー'].includes(v); }
+function renderKibou() {
+  const W = ['日', '月', '火', '水', '木', '金', '土'];
+  document.getElementById('kibou-list').innerHTML = kibouDays.map((d, i) => {
+    const dt = new Date(d.date + 'T00:00:00');
+    const w = dt.getDay();
+    const wc = w === 0 ? 'sun' : w === 6 ? 'sat' : '';
+    const dis = d.editable ? '' : 'disabled';
+    const b = v => '<button class="kb-btn' + (d.value === v ? ' on' : '') + '" ' + dis + ' onclick="setKibou(' + i + ',\'' + v + '\')">' + v + '</button>';
+    const tv = kibouIsTime(d.value) ? d.value : '';
+    return '<div class="kb-row' + (d.editable ? '' : ' past') + '">' +
+      '<div class="kb-date">' + (dt.getMonth() + 1) + '/' + dt.getDate() + ' <span class="' + wc + '">' + W[w] + '</span></div>' +
+      '<div class="kb-btns">' + b('○') + b('×') + b('ー') +
+      '<input class="kb-time' + (tv ? ' on' : '') + '" ' + dis + ' placeholder="時間" value="' + escHtml(tv) + '" onchange="setKibouTime(' + i + ', this.value.trim())">' +
+      '</div></div>';
+  }).join('');
+}
+function setKibou(i, v) {
+  const d = kibouDays[i];
+  if (!d || !d.editable) return;
+  d.value = (d.value === v) ? '' : v;   // 同じボタンをもう一度押すと空に戻す
+  renderKibou();
+}
+function setKibouTime(i, v) {
+  const d = kibouDays[i];
+  if (!d || !d.editable) return;
+  d.value = v;
+  renderKibou();
+}
+async function saveKibou() {
+  const changed = kibouDays.filter(d => d.editable && d.value !== d.orig);
+  if (changed.length === 0) { toast('変更はありません'); return; }
+  const entries = {};
+  changed.forEach(d => { entries[d.date] = d.value; });
+  showLoading('シフト希望を送信中...');
+  try {
+    const res = await gasGet({ type: 'kibou_save', staff: currentStaff, month: kibouMonth6(), entries: JSON.stringify(entries) });
+    hideLoading();
+    if (!res.ok) { toast('⚠ ' + (res.error || '送信できませんでした'), 4000); return; }
+    if (res.bad && res.bad.length) toast('⚠ 時間の書き方が違う日があります（例: 17- / 11-18）', 4000);
+    else toast('✅ シフト希望を提出しました');
+    loadKibou();
+  } catch (e) {
+    hideLoading();
+    toast('⚠ 通信エラー。もう一度押してください', 4000);
+  }
+}
 
 // ========== TAB ==========
 function switchTab(name, el) {
